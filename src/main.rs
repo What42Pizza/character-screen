@@ -3,6 +3,11 @@
 
 
 
+pub const CHAR_WIDTH: usize = 10;
+pub const CHAR_HEIGHT: usize = 12;
+
+
+
 pub use anyhow::*;
 pub use bytemuck::Zeroable;
 pub use log::info;
@@ -58,11 +63,13 @@ pub struct RenderData {
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C)]
 pub struct UniformsRawData {
+	pub charmap_size: [u32; 2],
 	pub target_size: [u32; 2],
 }
 
-pub fn update_uniforms(uniforms_buffer: &mut simple_gpu::UniformsBuffer<UniformsRawData>, target_size: (u32, u32)) {
+pub fn update_uniforms(uniforms_buffer: &mut simple_gpu::UniformsBuffer<UniformsRawData>, target_size: (u32, u32), charmap_size: (u16, u16)) {
 	let uniforms = &mut uniforms_buffer.cpu_copy;
+	uniforms.charmap_size = [charmap_size.0 as u32, charmap_size.1 as u32];
 	uniforms.target_size = target_size.into();
 }
 
@@ -122,7 +129,7 @@ fn main() -> Result<()> {
 	let render_data = make_render_data(char_atlas_tex, main_shader, window_surface.wgpu_format, &gpu_instance);
 	
 	// character map
-	let (char_map_buffer, char_map_bind_group) = make_character_map(&render_data, &gpu_instance);
+	let (char_map_buffer, char_map_bind_group, size) = make_character_map((96, 45), &render_data, &gpu_instance);
 	
 	// assemble program's data
 	let mut data = ProgramData {
@@ -204,8 +211,6 @@ fn main() -> Result<()> {
 				}
 			};
 		
-		let target_size = data.screen_size;
-		
 		let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
 			label: Some("Character Map Render Pass"),
 			color_attachments: &[
@@ -225,8 +230,8 @@ fn main() -> Result<()> {
 			multiview_mask: None,
 		});
 		
-		prepare_rendering(target_size, &mut render_pass, &mut data.render_data, &gpu_instance);
-		render(&data.char_map_bind_group, &mut render_pass, &gpu_instance);
+		//prepare_rendering(target_size, &mut render_pass, &mut data.render_data, &gpu_instance);
+		render(&[(&data.char_map_bind_group, size)], data.screen_size, &mut render_pass, &mut data.render_data, &gpu_instance);
 		
 		simple_gpu::finish_render_pass(render_pass);
 		

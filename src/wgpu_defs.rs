@@ -142,19 +142,25 @@ pub fn make_pipeline(main_shader: &simple_gpu::Shaders, pipeline_layout: &wgpu::
 
 
 
-pub fn make_character_map_buffer(gpu_instance: &simple_gpu::GpuInstance) -> simple_gpu::GpuBuffer<u8> {
-	let mut character_map_buffer = simple_gpu::create_buffer::<u8>("Main Character Map Buffer", 108*60*4, wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE, gpu_instance);
-	*character_map_buffer = vec![0; 108*60*4];
-	character_map_buffer[4] = 1;
-	character_map_buffer[5] = 1;
+pub fn make_character_map_buffer(size: (u16, u16), gpu_instance: &simple_gpu::GpuInstance) -> simple_gpu::GpuBuffer<u8> {
+	let buf_size  = size.0 as usize * size.1 as usize * 4;
+	let mut character_map_buffer = simple_gpu::create_buffer::<u8>("Main Character Map Buffer", buf_size as u32, wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE, gpu_instance);
+	*character_map_buffer = vec![0; buf_size];
+	for i in 0..128 {
+		character_map_buffer[i*4] = i as u8;
+	}
+	//character_map_buffer[4] = 65;
+	//character_map_buffer[5] = 1;
+	//character_map_buffer[8] = 66;
+	//character_map_buffer[9] = 1;
 	simple_gpu::sync_buffer(&mut character_map_buffer, gpu_instance);
 	character_map_buffer
 }
 
-pub fn make_character_map(render_data: &RenderData, gpu_instance: &simple_gpu::GpuInstance) -> (simple_gpu::GpuBuffer<u8>, wgpu::BindGroup) {
-	let buffer = make_character_map_buffer(gpu_instance);
+pub fn make_character_map(size: (u16, u16), render_data: &RenderData, gpu_instance: &simple_gpu::GpuInstance) -> (simple_gpu::GpuBuffer<u8>, wgpu::BindGroup, (u16, u16)) {
+	let buffer = make_character_map_buffer(size, gpu_instance);
 	let bind_group = make_char_map_bind_group(&render_data.char_map_bind_group_layout, &buffer, &gpu_instance);
-	(buffer, bind_group)
+	(buffer, bind_group, size)
 }
 
 
