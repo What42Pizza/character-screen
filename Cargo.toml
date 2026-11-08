@@ -9,7 +9,9 @@ license = "MIT"
 	default-features = false
 	features = [ "std", "dx12", "metal", "gles", "vulkan" ]
 [dependencies.simple-gpu]
-	path = "/home/what42/Desktop/rust-simple-gpu"
+	git = "https://github.com/What42Pizza/rust-simple-gpu"
+	features = [ "glsl" ]
+	default-features = false
 [dependencies.image]
 	version = "0.25.*"
 	default-features = false
@@ -21,6 +23,10 @@ license = "MIT"
 	version = "1.*"
 	default-features = false
 
+[dev-dependencies.simple-gpu]
+	git = "https://github.com/What42Pizza/rust-simple-gpu"
+	features = [ "glsl", "image" ]
+	default-features = false
 [dev-dependencies.sdl3]
 	version = "0.22.*"
 	features = [ "raw-window-handle", "build-from-source" ]
