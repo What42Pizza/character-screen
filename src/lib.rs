@@ -109,13 +109,19 @@ pub fn render(
 
 
 
-/// Loads a character texture atlas from a file path. The texture is expected to be 175x239 (10x14 characters textures with a one pixel gap in between), and the returned texture is 160x224 (10x16 chars with no gaps)
+/// Loads a character texture atlas from a file path
+///
+/// The texture is expected to be 175x239 (10x14 characters textures with a one pixel gap in between), and the returned texture is 160x224 (10x16 chars with no gaps)
+///
+/// # Errors
+///
+/// This errors if `image::open` fails or if the size of the image is not exactly 175x239
 pub fn load_character_atlas(
 	path: impl AsRef<Path>,
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> Result<simple_gpu::Texture> {
 	let path = path.as_ref();
-	
+
 	let texture_image =
 		image::open(path).with_context(|| format!("Failed to read file {}", path.display()))?;
 	let size = (texture_image.width(), texture_image.height());
@@ -130,10 +136,10 @@ pub fn load_character_atlas(
 		.file_name()
 		.map(OsStr::to_string_lossy)
 		.ok_or_else(|| anyhow!("Failed to get file name from path {}", path.display()))?;
-	
+
 	let mut texture_data = texture_image.into_rgba8();
-	let texture_data = remove_padding(&mut *texture_data)?;
-	
+	let texture_data = remove_padding(&mut texture_data)?;
+
 	let texture = simple_gpu::create_texture(
 		file_name,
 		(160, 224),
@@ -143,13 +149,19 @@ pub fn load_character_atlas(
 		gpu_instance,
 	);
 	simple_gpu::update_texture(&texture, texture_data, gpu_instance);
-	
+
 	Ok(texture)
 }
 
 
 
-/// Removes the padding from a character atlas texture. The input texture must be RGBA8, 175x239 (CHAR_SIZE*16+15, one pixel gap between each character texture), and the data is packed into an RGBA8 160x224 texture. This both mutates the given data and returns a slice for the compacted data
+/// Removes the padding from a character atlas texture
+///
+/// The input texture must be RGBA8, 175x239 (`CHAR_SIZE * 16 + 15`, one pixel gap between each character texture), and the data is packed into an RGBA8 160x224 texture. This both mutates the given data and returns a slice for the compacted data
+///
+/// # Errors
+///
+/// This errors if `data.len()` is not exactly 167300 (which is 175*239*4)
 pub fn remove_padding(data: &mut [u8]) -> Result<&[u8]> {
 	const CHAR_STRIDE: usize = CHAR_WIDTH * 4;
 	const EXPECTED_DATA_LEN: usize = (CHAR_WIDTH * 16 + 15) * (CHAR_HEIGHT * 16 + 15) * 4;

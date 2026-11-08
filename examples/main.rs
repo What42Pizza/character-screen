@@ -66,19 +66,24 @@ fn main() -> Result<()> {
 		&gpu_instance,
 	)?;
 	debug_assert_eq!(color_lut.settings.size, (16, 16));
-	let char_atlas_tex_view = char_atlas_tex.wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
-	let color_lut_tex_view = color_lut.wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
+	let char_atlas_tex_view = char_atlas_tex
+		.wgpu_texture
+		.create_view(&wgpu::TextureViewDescriptor::default());
+	let color_lut_tex_view = color_lut
+		.wgpu_texture
+		.create_view(&wgpu::TextureViewDescriptor::default());
 
-	let render_data = character_screen::make_render_data(
-		window_surface.wgpu_format,
-		&gpu_instance,
-	);
+	let render_data = character_screen::make_render_data(window_surface.wgpu_format, &gpu_instance);
 
 	// character map
-	let mut charmap =
-		character_screen::create_charmap("Main Charmap", (96, 45),
+	let mut charmap = character_screen::create_charmap(
+		"Main Charmap",
+		(96, 45),
 		&char_atlas_tex_view,
-		&color_lut_tex_view, &render_data, &gpu_instance);
+		&color_lut_tex_view,
+		&render_data,
+		&gpu_instance,
+	);
 	place_text(
 		"All Characters: ",
 		(0, 0),
@@ -86,7 +91,7 @@ fn main() -> Result<()> {
 		&mut charmap.buffer,
 		charmap.size,
 	);
-	for i in 16..16+128 {
+	for i in 16..16 + 128 {
 		charmap.buffer[i * 4] = i as u8;
 		charmap.buffer[i * 4 + 1] = 4;
 		charmap.buffer[i * 4 + 2] = 1;
@@ -191,11 +196,7 @@ fn main() -> Result<()> {
 			multiview_mask: None,
 		});
 
-		character_screen::render(
-			&[&data.charmap],
-			&mut render_pass,
-			&mut data.render_data,
-		);
+		character_screen::render(&[&data.charmap], &mut render_pass, &mut data.render_data);
 
 		simple_gpu::finish_render_pass(render_pass);
 

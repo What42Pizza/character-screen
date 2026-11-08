@@ -1,14 +1,12 @@
 #![allow(missing_docs)]
 
-use crate::{Charmap, CHAR_HEIGHT, CHAR_WIDTH, RenderData, UniformsRawData};
+use crate::{CHAR_HEIGHT, CHAR_WIDTH, Charmap, RenderData, UniformsRawData};
 
 
 
 #[must_use]
 #[inline]
-pub fn make_bind_group_layout(
-	gpu_instance: &simple_gpu::GpuInstance,
-) -> wgpu::BindGroupLayout {
+pub fn make_bind_group_layout(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::BindGroupLayout {
 	gpu_instance
 		.wgpu_device
 		.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -81,9 +79,7 @@ pub fn make_pipeline_layout(
 		.wgpu_device
 		.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
 			label: Some("Main Pipeline Layout"),
-			bind_group_layouts: &[
-				Some(bind_group_layout),
-			],
+			bind_group_layouts: &[Some(bind_group_layout)],
 			immediate_size: 0,
 		})
 }
@@ -149,17 +145,31 @@ pub fn make_character_map_buffer(
 
 #[must_use]
 #[inline]
-pub fn create_charmap(name: impl Into<String>, size: (u16, u16), char_atlas_view: &wgpu::TextureView, color_lut_view: &wgpu::TextureView, render_data: &RenderData, gpu_instance: &simple_gpu::GpuInstance) -> Charmap {
+pub fn create_charmap(
+	name: impl Into<String>,
+	size: (u16, u16),
+	char_atlas_view: &wgpu::TextureView,
+	color_lut_view: &wgpu::TextureView,
+	render_data: &RenderData,
+	gpu_instance: &simple_gpu::GpuInstance,
+) -> Charmap {
 	let name = name.into();
-	
+
 	let mut uniforms_buffer = simple_gpu::create_uniforms_buffer(gpu_instance);
-	uniforms_buffer.cpu_copy = UniformsRawData { charmap_size: [u32::from(size.0), u32::from(size.1)] };
+	uniforms_buffer.cpu_copy = UniformsRawData {
+		charmap_size: [u32::from(size.0), u32::from(size.1)],
+	};
 	simple_gpu::sync_uniforms_buffer(&uniforms_buffer, gpu_instance);
-	
-	let mut buffer = simple_gpu::create_buffer(&name, size.0 as u32 * size.1 as u32 * 4, wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE, gpu_instance);
+
+	let mut buffer = simple_gpu::create_buffer(
+		&name,
+		u32::from(size.0) * u32::from(size.1) * 4,
+		wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
+		gpu_instance,
+	);
 	*buffer = vec![0; size.0 as usize * size.1 as usize * 4];
 	simple_gpu::sync_buffer(&mut buffer, gpu_instance);
-	
+
 	let bind_group = gpu_instance
 		.wgpu_device
 		.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -192,7 +202,7 @@ pub fn create_charmap(name: impl Into<String>, size: (u16, u16), char_atlas_view
 				},
 			],
 		});
-	
+
 	Charmap {
 		name,
 		size,
@@ -228,7 +238,6 @@ pub fn make_render_data(
 	output_format: wgpu::TextureFormat,
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> RenderData {
-	
 	let main_shader = simple_gpu::make_glsl_shaders(
 		"shaders/main.vsh",
 		include_str!("shaders/main.vsh"),
@@ -240,13 +249,10 @@ pub fn make_render_data(
 			("CHAR_HEIGHT", &CHAR_HEIGHT.to_string()),
 		],
 	);
-	
+
 	let nearest_sampler = make_nearest_sampler(gpu_instance);
 	let bind_group_layout = make_bind_group_layout(gpu_instance);
-	let pipeline_layout = make_pipeline_layout(
-		&bind_group_layout,
-		gpu_instance,
-	);
+	let pipeline_layout = make_pipeline_layout(&bind_group_layout, gpu_instance);
 	let pipeline = make_pipeline(&main_shader, &pipeline_layout, output_format, gpu_instance);
 
 	RenderData {
