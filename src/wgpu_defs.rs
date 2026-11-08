@@ -59,7 +59,7 @@ pub fn make_main_bind_group_layout(
 
 #[must_use]
 #[inline]
-pub fn make_char_map_bind_group_layout(
+pub fn make_charmap_bind_group_layout(
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> wgpu::BindGroupLayout {
 	gpu_instance
@@ -122,7 +122,7 @@ pub fn make_main_bind_group(
 
 #[must_use]
 #[inline]
-pub fn make_char_map_bind_group(
+pub fn make_charmap_bind_group(
 	main_bind_group_layout: &wgpu::BindGroupLayout,
 	character_map_buffer: &simple_gpu::GpuBuffer<u8>,
 	gpu_instance: &simple_gpu::GpuInstance,
@@ -147,7 +147,7 @@ pub fn make_char_map_bind_group(
 #[inline]
 pub fn make_pipeline_layout(
 	main_bind_group_layout: &wgpu::BindGroupLayout,
-	char_map_bind_group_layout: &wgpu::BindGroupLayout,
+	charmap_bind_group_layout: &wgpu::BindGroupLayout,
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> wgpu::PipelineLayout {
 	gpu_instance
@@ -156,7 +156,7 @@ pub fn make_pipeline_layout(
 			label: Some("Main Pipeline Layout"),
 			bind_group_layouts: &[
 				Some(main_bind_group_layout),
-				Some(char_map_bind_group_layout),
+				Some(charmap_bind_group_layout),
 			],
 			immediate_size: 0,
 		})
@@ -227,8 +227,8 @@ pub fn make_character_map(
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> (simple_gpu::GpuBuffer<u8>, wgpu::BindGroup, (u16, u16)) {
 	let buffer = make_character_map_buffer(size, gpu_instance);
-	let bind_group = make_char_map_bind_group(
-		&render_data.char_map_bind_group_layout,
+	let bind_group = make_charmap_bind_group(
+		&render_data.charmap_bind_group_layout,
 		&buffer,
 		gpu_instance,
 	);
@@ -280,7 +280,7 @@ pub fn make_render_data(
 	let uniforms_buffer = simple_gpu::create_uniforms_buffer::<UniformsRawData>(gpu_instance);
 	let nearest_sampler = make_nearest_sampler(gpu_instance);
 	let main_bind_group_layout = make_main_bind_group_layout(gpu_instance);
-	let char_map_bind_group_layout = make_char_map_bind_group_layout(gpu_instance);
+	let charmap_bind_group_layout = make_charmap_bind_group_layout(gpu_instance);
 	let main_bind_group = make_main_bind_group(
 		&main_bind_group_layout,
 		&uniforms_buffer,
@@ -291,7 +291,7 @@ pub fn make_render_data(
 	);
 	let pipeline_layout = make_pipeline_layout(
 		&main_bind_group_layout,
-		&char_map_bind_group_layout,
+		&charmap_bind_group_layout,
 		gpu_instance,
 	);
 	let pipeline = make_pipeline(&main_shader, &pipeline_layout, output_format, gpu_instance);
@@ -305,7 +305,7 @@ pub fn make_render_data(
 		uniforms_buffer,
 		nearest_sampler,
 		main_bind_group_layout,
-		char_map_bind_group_layout,
+		charmap_bind_group_layout,
 		main_bind_group,
 		pipeline_layout,
 		pipeline,

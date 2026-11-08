@@ -24,7 +24,7 @@
 /// This is the width of characters. It should be customizable but idk how to do that well
 pub const CHAR_WIDTH: usize = 10;
 /// This is the height of characters. It should be customizable but idk how to do that well
-pub const CHAR_HEIGHT: usize = 12;
+pub const CHAR_HEIGHT: usize = 14;
 
 
 
@@ -36,9 +36,9 @@ pub use wgpu_defs::*;
 
 /// Everything this crate needs for rendering character maps
 pub struct RenderData {
-	/// The wgpu texture for the character textures, must hold 16 chars x 16 chars (160x192 total size)
+	/// The wgpu texture for the character textures, must hold 16 chars x 16 chars (160x224 total size)
 	pub char_atlas_tex: wgpu::Texture,
-	/// The wgpu tex view for the character textures, must hold 16 chars x 16 chars (160x192 total size)
+	/// The wgpu tex view for the character textures, must hold 16 chars x 16 chars (160x224 total size)
 	pub char_atlas_view: wgpu::TextureView,
 	/// The wgpu texture for the color lut, must be 16x16
 	pub color_lut_tex: wgpu::Texture,
@@ -54,7 +54,7 @@ pub struct RenderData {
 	/// The main wgpu bind group layout (used for all charmap renders)
 	pub main_bind_group_layout: wgpu::BindGroupLayout,
 	/// The charmap wgpu bind group layout (used for specific charmap renders)
-	pub char_map_bind_group_layout: wgpu::BindGroupLayout,
+	pub charmap_bind_group_layout: wgpu::BindGroupLayout,
 	/// The main wgpu bind group (used for all charmap renders)
 	pub main_bind_group: wgpu::BindGroup,
 	/// The wgpu pipeline layout (used for all charmap renders)
@@ -88,14 +88,14 @@ pub fn update_uniforms(
 /// Does the actual rendering
 #[inline]
 pub fn render(
-	char_maps: &[(&wgpu::BindGroup, (u16, u16))],
+	charmaps: &[(&wgpu::BindGroup, (u16, u16))],
 	render_pass: &mut wgpu::RenderPass,
 	render_data: &mut RenderData,
 	gpu_instance: &simple_gpu::GpuInstance,
 ) {
 	render_pass.set_pipeline(&render_data.pipeline);
 	render_pass.set_bind_group(0, &render_data.main_bind_group, &[]);
-	for (charmap_bind, charmap_size) in char_maps {
+	for (charmap_bind, charmap_size) in charmaps {
 		update_uniforms(&mut render_data.uniforms_buffer, *charmap_size);
 		simple_gpu::sync_uniforms_buffer(&render_data.uniforms_buffer, gpu_instance);
 		render_pass.set_bind_group(1, *charmap_bind, &[]);
