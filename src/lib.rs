@@ -28,9 +28,6 @@ pub const CHAR_HEIGHT: usize = 12;
 
 
 
-/// Functions for loading textures
-pub mod load_textures;
-pub use load_textures::*;
 /// Functions for initializing wgpu stuff
 pub mod wgpu_defs;
 pub use wgpu_defs::*;

@@ -200,7 +200,6 @@ dependencies = [
  "anyhow",
  "bytemuck",
  "env_logger",
- "image",
  "log",
  "sdl3",
  "simple-gpu",

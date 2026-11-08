@@ -14,10 +14,6 @@ repository = "https://github.com/What42Pizza/character-screen"
 	git = "https://github.com/What42Pizza/rust-simple-gpu"
 	features = [ "glsl" ]
 	default-features = false
-[dependencies.image]
-	version = "0.25.*"
-	default-features = false
-	features = [ "png", "jpeg", "webp", "bmp", "tga" ]
 [dependencies.anyhow]
 	version = "1.*"
 	default-features = false

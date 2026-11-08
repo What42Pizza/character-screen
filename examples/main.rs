@@ -58,15 +58,21 @@ fn main() -> Result<()> {
 	let mut window_surface = window_surface?;
 
 	// textures
-	let textures_path = assets_path.join("textures");
-	let char_atlas_tex = character_screen::load_all_textures(textures_path, &gpu_instance)?;
+	let char_atlas_tex = simple_gpu::load_texture_from_path(
+		assets_path.join("atlas.png"),
+		wgpu::FilterMode::Nearest,
+		1,
+		&gpu_instance,
+	)?;
 	let color_lut = simple_gpu::load_texture_from_path(
 		assets_path.join("color_lut.png"),
 		wgpu::FilterMode::Nearest,
 		1,
 		&gpu_instance,
 	)?;
+	assert_eq!(char_atlas_tex.settings.size, (160, 192));
 	assert_eq!(color_lut.settings.size, (16, 16));
+	let char_atlas_tex = char_atlas_tex.wgpu_texture;
 	let color_lut = color_lut.wgpu_texture;
 
 	let render_data = character_screen::make_render_data(
