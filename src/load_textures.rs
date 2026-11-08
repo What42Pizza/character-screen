@@ -1,5 +1,5 @@
 use crate::*;
-use std::{mem::MaybeUninit, path::Path};
+use std::path::Path;
 
 
 
@@ -95,7 +95,7 @@ pub fn load_and_place_tex(atlas_data: &mut [u8; CHAR_WIDTH * CHAR_HEIGHT * 4 * 2
 	unsafe {
 		let mut tex_src = tex_data.as_ptr();
 		let mut atlas_dest = atlas_data.as_mut_ptr().add(atlas_row_pos);
-		for y in 0..CHAR_HEIGHT {
+		for _row in 0..CHAR_HEIGHT {
 			atlas_dest.copy_from(tex_src, CHAR_STRIDE);
 			tex_src = tex_src.add(CHAR_STRIDE);
 			atlas_dest = atlas_dest.add(ATLAS_STRIDE);

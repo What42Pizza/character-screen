@@ -3,11 +3,6 @@
 
 
 
-pub const CHAR_WIDTH: usize = 10;
-pub const CHAR_HEIGHT: usize = 12;
-
-
-
 pub use anyhow::*;
 pub use bytemuck::Zeroable;
 pub use log::info;
@@ -16,15 +11,6 @@ pub use sdl3::{
 	keyboard::{KeyboardState, Keycode},
 };
 pub use std::{path::PathBuf, time::Instant};
-
-
-
-pub mod load_textures;
-pub use load_textures::*;
-pub mod render;
-pub use render::*;
-pub mod wgpu_defs;
-pub use wgpu_defs::*;
 
 
 
@@ -37,42 +23,10 @@ pub struct ProgramData {
 	pub screen_size: (u32, u32),
 	pub aspect_ratio: f32,
 	
-	pub render_data: RenderData,
+	pub render_data: character_screen::RenderData,
 	pub char_map_buffer: simple_gpu::GpuBuffer<u8>,
 	pub char_map_bind_group: wgpu::BindGroup,
 	
-}
-
-pub struct RenderData {
-	
-	pub char_atlas_tex: wgpu::Texture,
-	pub char_atlas_view: wgpu::TextureView,
-	pub color_lut_tex: wgpu::Texture,
-	pub color_lut_view: wgpu::TextureView,
-	pub main_shader: simple_gpu::Shaders,
-	
-	pub uniforms_buffer: simple_gpu::UniformsBuffer<UniformsRawData>,
-	pub nearest_sampler: wgpu::Sampler,
-	pub main_bind_group_layout: wgpu::BindGroupLayout,
-	pub char_map_bind_group_layout: wgpu::BindGroupLayout,
-	pub main_bind_group: wgpu::BindGroup,
-	pub pipeline_layout: wgpu::PipelineLayout,
-	pub pipeline: wgpu::RenderPipeline,
-	pub curr_pipeline_output_format: wgpu::TextureFormat,
-	
-}
-
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-#[repr(C)]
-pub struct UniformsRawData {
-	pub charmap_size: [u32; 2],
-	pub target_size: [u32; 2],
-}
-
-pub fn update_uniforms(uniforms_buffer: &mut simple_gpu::UniformsBuffer<UniformsRawData>, target_size: (u32, u32), charmap_size: (u16, u16)) {
-	let uniforms = &mut uniforms_buffer.cpu_copy;
-	uniforms.charmap_size = [charmap_size.0 as u32, charmap_size.1 as u32];
-	uniforms.target_size = target_size.into();
 }
 
 
@@ -113,28 +67,17 @@ fn main() -> Result<()> {
 	);
 	let mut window_surface = window_surface?;
 	
-	// shaders
-	let shaders_path = assets_path.join("shaders");
-	let main_shader = simple_gpu::make_glsl_shaders(
-		"shaders/main.vsh",
-		include_str!("shaders/main.vsh"),
-		"shaders/main.fsh",
-		include_str!("shaders/main.fsh"),
-		&gpu_instance,
-		&[],
-	);
-	
 	// textures
 	let textures_path = assets_path.join("textures");
-	let char_atlas_tex = load_all_textures(textures_path, &gpu_instance)?;
+	let char_atlas_tex = character_screen::load_all_textures(textures_path, &gpu_instance)?;
 	let color_lut = simple_gpu::load_texture_from_path(assets_path.join("color_lut.png"), wgpu::FilterMode::Nearest, 1, &gpu_instance)?;
 	assert_eq!(color_lut.settings.size, (16, 16));
 	let color_lut = color_lut.wgpu_texture;
 	
-	let render_data = make_render_data(char_atlas_tex, color_lut, main_shader, window_surface.wgpu_format, &gpu_instance);
+	let render_data = character_screen::make_render_data(char_atlas_tex, color_lut, window_surface.wgpu_format, &gpu_instance);
 	
 	// character map
-	let (mut char_map_buffer, char_map_bind_group, size) = make_character_map((96, 45), &render_data, &gpu_instance);
+	let (mut char_map_buffer, char_map_bind_group, size) = character_screen::make_character_map((96, 45), &render_data, &gpu_instance);
 	for i in 0..128 {
 		char_map_buffer[i*4] = i as u8;
 		char_map_buffer[i*4+1] = 4;
@@ -241,8 +184,7 @@ fn main() -> Result<()> {
 			multiview_mask: None,
 		});
 		
-		//prepare_rendering(target_size, &mut render_pass, &mut data.render_data, &gpu_instance);
-		render(&[(&data.char_map_bind_group, size)], data.screen_size, &mut render_pass, &mut data.render_data, &gpu_instance);
+		character_screen::render(&[(&data.char_map_bind_group, size)], data.screen_size, &mut render_pass, &mut data.render_data, &gpu_instance);
 		
 		simple_gpu::finish_render_pass(render_pass);
 		

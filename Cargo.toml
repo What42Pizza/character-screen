@@ -2,14 +2,17 @@
 name = "character-screen"
 version = "0.1.0"
 edition = "2024"
+license = "CC0-1.0"
+description = ""
+repository = ""
+readme = ""
+keywords = []
+categories = []
 
 [dependencies.wgpu]
 	version = "29.*" # NOTE: wgpu 30.* seems to have some pretty bad input lag problems
 	default-features = false
 	features = [ "std", "dx12", "metal", "gles", "vulkan" ]
-[dependencies.sdl3]
-	version = "0.22.*"
-	features = [ "raw-window-handle", "build-from-source" ]
 [dependencies.simple-gpu]
 	path = "/home/what42/Desktop/rust-simple-gpu"
 [dependencies.image]
@@ -22,7 +25,11 @@ edition = "2024"
 [dependencies.bytemuck]
 	version = "1.*"
 	default-features = false
-[dependencies.env_logger]
+	
+[dev-dependencies.sdl3]
+	version = "0.22.*"
+	features = [ "raw-window-handle", "build-from-source" ]
+[dev-dependencies.env_logger]
 	version = "0.11.*"
-[dependencies.log]
+[dev-dependencies.log]
 	version = "0.4.*"

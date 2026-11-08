@@ -187,7 +187,16 @@ pub fn make_nearest_sampler(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::Sam
 
 
 
-pub fn make_render_data(char_atlas_tex: wgpu::Texture, color_lut_tex: wgpu::Texture, main_shader: simple_gpu::Shaders, output_format: wgpu::TextureFormat, gpu_instance: &simple_gpu::GpuInstance) -> RenderData {
+pub fn make_render_data(char_atlas_tex: wgpu::Texture, color_lut_tex: wgpu::Texture, output_format: wgpu::TextureFormat, gpu_instance: &simple_gpu::GpuInstance) -> RenderData {
+	
+	let main_shader = simple_gpu::make_glsl_shaders(
+		"shaders/main.vsh",
+		include_str!("shaders/main.vsh"),
+		"shaders/main.fsh",
+		include_str!("shaders/main.fsh"),
+		&gpu_instance,
+		&[],
+	);
 	
 	let char_atlas_view = char_atlas_tex.create_view(&wgpu::TextureViewDescriptor::default());
 	let color_lut_view = color_lut_tex.create_view(&wgpu::TextureViewDescriptor::default());
