@@ -2,12 +2,7 @@
 name = "character-screen"
 version = "0.1.0"
 edition = "2024"
-license = "CC0-1.0"
-description = ""
-repository = ""
-readme = ""
-keywords = []
-categories = []
+license = "MIT"
 
 [dependencies.wgpu]
 	version = "29.*" # NOTE: wgpu 30.* seems to have some pretty bad input lag problems
@@ -25,7 +20,7 @@ categories = []
 [dependencies.bytemuck]
 	version = "1.*"
 	default-features = false
-	
+
 [dev-dependencies.sdl3]
 	version = "0.22.*"
 	features = [ "raw-window-handle", "build-from-source" ]

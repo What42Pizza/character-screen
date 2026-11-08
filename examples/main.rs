@@ -83,6 +83,10 @@ fn main() -> Result<()> {
 		char_map_buffer[i*4+1] = 4;
 		char_map_buffer[i*4+2] = 1;
 	}
+	for (i, c) in "HELLO, WORLD!".chars().enumerate() {
+		char_map_buffer[(i + 128) * 4] = c as u8;
+		char_map_buffer[(i + 128) * 4 + 2] = 1;
+	}
 	simple_gpu::sync_buffer(&mut char_map_buffer, &gpu_instance);
 	
 	// assemble program's data

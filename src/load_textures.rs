@@ -7,34 +7,12 @@ pub fn load_all_textures(textures_path: impl AsRef<Path>, gpu_instance: &simple_
 	let textures_path = textures_path.as_ref();
 	let mut atlas_data = [0; CHAR_WIDTH * CHAR_HEIGHT * 4 * 256];
 	
-	load_and_place_tex(&mut atlas_data, 0, textures_path.join("double-line-cross.png"))?;
-	load_and_place_tex(&mut atlas_data, 1, textures_path.join("double-line-horizontal.png"))?;
-	load_and_place_tex(&mut atlas_data, 2, textures_path.join("double-line-vertical.png"))?;
-	load_and_place_tex(&mut atlas_data, 32, textures_path.join("space.png"))?;
-	load_and_place_tex(&mut atlas_data, 44, textures_path.join("comma.png"))?;
-	load_and_place_tex(&mut atlas_data, 46, textures_path.join("period.png"))?;
-	load_and_place_tex(&mut atlas_data, 47, textures_path.join("slash.png"))?;
-	load_and_place_tex(&mut atlas_data, 58, textures_path.join("colon.png"))?;
-	load_and_place_tex(&mut atlas_data, 59, textures_path.join("semi-colon.png"))?;
-	load_and_place_tex(&mut atlas_data, 61, textures_path.join("equal.png"))?;
-	load_and_place_tex(&mut atlas_data, 65, textures_path.join("A.png"))?;
-	load_and_place_tex(&mut atlas_data, 66, textures_path.join("B.png"))?;
-	load_and_place_tex(&mut atlas_data, 67, textures_path.join("C.png"))?;
-	load_and_place_tex(&mut atlas_data, 68, textures_path.join("D.png"))?;
-	load_and_place_tex(&mut atlas_data, 69, textures_path.join("E.png"))?;
-	load_and_place_tex(&mut atlas_data, 70, textures_path.join("F.png"))?;
-	load_and_place_tex(&mut atlas_data, 71, textures_path.join("G.png"))?;
-	load_and_place_tex(&mut atlas_data, 72, textures_path.join("I.png"))?;
-	load_and_place_tex(&mut atlas_data, 73, textures_path.join("J.png"))?;
-	load_and_place_tex(&mut atlas_data, 74, textures_path.join("K.png"))?;
-	load_and_place_tex(&mut atlas_data, 75, textures_path.join("L.png"))?;
-	load_and_place_tex(&mut atlas_data, 76, textures_path.join("M.png"))?;
-	load_and_place_tex(&mut atlas_data, 77, textures_path.join("N.png"))?;
-	load_and_place_tex(&mut atlas_data, 78, textures_path.join("O.png"))?;
-	load_and_place_tex(&mut atlas_data, 91, textures_path.join("left-square-bracket.png"))?;
-	load_and_place_tex(&mut atlas_data, 92, textures_path.join("back-slash.png"))?;
-	load_and_place_tex(&mut atlas_data, 93, textures_path.join("right-square-bracket.png"))?;
-	load_and_place_tex(&mut atlas_data, 95, textures_path.join("underscore.png"))?;
+	for i in 0..=255 {
+		let path = textures_path.join(i.to_string() + ".png");
+		if path.exists() {
+			load_and_place_tex(&mut atlas_data, i, path)?;
+		}
+	}
 	
 	let texture = gpu_instance
 		.wgpu_device
