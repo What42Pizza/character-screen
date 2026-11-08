@@ -41,27 +41,12 @@ use std::{ffi::OsStr, path::Path};
 
 /// Everything this crate needs for rendering character maps
 pub struct RenderData {
-	/// The wgpu texture for the character textures, must hold 16 chars x 16 chars (160x224 total size)
-	pub char_atlas_tex: wgpu::Texture,
-	/// The wgpu tex view for the character textures, must hold 16 chars x 16 chars (160x224 total size)
-	pub char_atlas_view: wgpu::TextureView,
-	/// The wgpu texture for the color lut, must be 16x16
-	pub color_lut_tex: wgpu::Texture,
-	/// The wgpu tex view for the color lut, must be 16x16
-	pub color_lut_view: wgpu::TextureView,
-	/// The shader used for rendering the character map
-	pub main_shader: simple_gpu::Shaders,
-
-	/// Uniforms for misc data
-	pub uniforms_buffer: simple_gpu::UniformsBuffer<UniformsRawData>,
 	/// A simple non-filtering sampler
 	pub nearest_sampler: wgpu::Sampler,
-	/// The main wgpu bind group layout (used for all charmap renders)
-	pub main_bind_group_layout: wgpu::BindGroupLayout,
-	/// The charmap wgpu bind group layout (used for specific charmap renders)
-	pub charmap_bind_group_layout: wgpu::BindGroupLayout,
-	/// The main wgpu bind group (used for all charmap renders)
-	pub main_bind_group: wgpu::BindGroup,
+	/// The shader used for rendering the character map
+	pub main_shader: simple_gpu::Shaders,
+	/// The bind group layout that the shader expects
+	pub bind_group_layout: wgpu::BindGroupLayout,
 	/// The wgpu pipeline layout (used for all charmap renders)
 	pub pipeline_layout: wgpu::PipelineLayout,
 	/// The wgpu pipeline (used for all charmap renders)
@@ -69,6 +54,8 @@ pub struct RenderData {
 	/// The output format of the current wgpu pipeline
 	pub curr_pipeline_output_format: wgpu::TextureFormat,
 }
+
+
 
 /// Misc data used for rendering charmaps
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -90,20 +77,32 @@ pub fn update_uniforms(
 
 
 
+/// Holds all the data for a character map, with all character data being stored in `Self.buffer`
+pub struct Charmap {
+	/// Holds the name, this is given to wgpu for easier debugging
+	pub name: String,
+	/// The size that this charmap was created as
+	pub size: (u16, u16),
+	/// Holds the size of the charmap
+	pub uniforms_buffer: simple_gpu::UniformsBuffer<UniformsRawData>,
+	/// Holds both the cpu copy and (a handle for) the gpu copy of the charmap data
+	pub buffer: simple_gpu::GpuBuffer<u8>,
+	/// Holds the resources that are given to the shader
+	pub bind_group: wgpu::BindGroup,
+}
+
+
+
 /// Does the actual rendering
 #[inline]
 pub fn render(
-	charmaps: &[(&wgpu::BindGroup, (u16, u16))],
+	charmaps: &[&Charmap],
 	render_pass: &mut wgpu::RenderPass,
 	render_data: &mut RenderData,
-	gpu_instance: &simple_gpu::GpuInstance,
 ) {
 	render_pass.set_pipeline(&render_data.pipeline);
-	render_pass.set_bind_group(0, &render_data.main_bind_group, &[]);
-	for (charmap_bind, charmap_size) in charmaps {
-		update_uniforms(&mut render_data.uniforms_buffer, *charmap_size);
-		simple_gpu::sync_uniforms_buffer(&render_data.uniforms_buffer, gpu_instance);
-		render_pass.set_bind_group(1, *charmap_bind, &[]);
+	for charmap in charmaps {
+		render_pass.set_bind_group(0, &charmap.bind_group, &[]);
 		render_pass.draw(0..3, 0..1);
 	}
 }

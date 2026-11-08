@@ -2,7 +2,7 @@
 
 // these are given by the rust code to naga:
 //#define CHAR_WIDTH 10
-//#define CHAR_HEIGHT 12
+//#define CHAR_HEIGHT 14
 #define CHAR_SIZE uvec2(CHAR_WIDTH, CHAR_HEIGHT)
 
 layout(set = 0, binding = 0) uniform all_uniforms {
@@ -13,7 +13,7 @@ layout(set = 0, binding = 2) uniform texture2D color_lut_tex;
 layout(set = 0, binding = 3) uniform sampler nearest_sampler;
 #define char_atlas sampler2D(char_atlas_tex, nearest_sampler)
 #define color_lut sampler2D(color_lut_tex, nearest_sampler)
-layout(set = 1, binding = 0, std430) readonly buffer CharacterMap {
+layout(set = 0, binding = 4, std430) readonly buffer CharacterMap {
     uint data[];
 } charmap;
 

@@ -16,8 +16,7 @@ pub struct ProgramData {
 	pub aspect_ratio: f32,
 
 	pub render_data: character_screen::RenderData,
-	pub charmap_buffer: simple_gpu::GpuBuffer<u8>,
-	pub charmap_bind_group: wgpu::BindGroup,
+	pub charmap: character_screen::Charmap,
 }
 
 
@@ -67,40 +66,47 @@ fn main() -> Result<()> {
 		&gpu_instance,
 	)?;
 	debug_assert_eq!(color_lut.settings.size, (16, 16));
-	let char_atlas_tex = char_atlas_tex.wgpu_texture;
-	let color_lut = color_lut.wgpu_texture;
+	let char_atlas_tex_view = char_atlas_tex.wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
+	let color_lut_tex_view = color_lut.wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
 	let render_data = character_screen::make_render_data(
-		char_atlas_tex,
-		color_lut,
 		window_surface.wgpu_format,
 		&gpu_instance,
 	);
 
 	// character map
-	let (mut charmap_buffer, charmap_bind_group, charmap_size) =
-		character_screen::make_character_map((96, 45), &render_data, &gpu_instance);
-	for i in 0..128 {
-		charmap_buffer[i * 4] = i as u8;
-		charmap_buffer[i * 4 + 1] = 4;
-		charmap_buffer[i * 4 + 2] = 1;
+	let mut charmap =
+		character_screen::create_charmap("Main Charmap", (96, 45),
+		&char_atlas_tex_view,
+		&color_lut_tex_view, &render_data, &gpu_instance);
+	place_text(
+		"All Characters: ",
+		(0, 0),
+		(0, 1, 0),
+		&mut charmap.buffer,
+		charmap.size,
+	);
+	for i in 16..16+128 {
+		charmap.buffer[i * 4] = i as u8;
+		charmap.buffer[i * 4 + 1] = 4;
+		charmap.buffer[i * 4 + 2] = 1;
 	}
 	place_text(
 		"HELLO, WORLD!",
 		(16, 16),
 		(0, 1, 0),
-		&mut charmap_buffer,
-		charmap_size,
+		&mut charmap.buffer,
+		charmap.size,
 	);
 	place_text(
-		"the quick brown fox jumped over the lazy dog",
+		"The quick brown fox jumped over the lazy dog.",
 		(16, 17),
 		(0, 1, 0),
-		&mut charmap_buffer,
-		charmap_size,
+		&mut charmap.buffer,
+		charmap.size,
 	);
-	place_border(15, 60, 15, 18, (0, 1, 0), &mut charmap_buffer, charmap_size);
-	simple_gpu::sync_buffer(&mut charmap_buffer, &gpu_instance);
+	place_border(15, 61, 15, 18, (0, 1, 0), &mut charmap.buffer, charmap.size);
+	simple_gpu::sync_buffer(&mut charmap.buffer, &gpu_instance);
 
 	// assemble program's data
 	let mut data = ProgramData {
@@ -111,8 +117,7 @@ fn main() -> Result<()> {
 		aspect_ratio: window_size.0 as f32 / window_size.1 as f32,
 
 		render_data,
-		charmap_buffer,
-		charmap_bind_group,
+		charmap,
 	};
 
 
@@ -187,10 +192,9 @@ fn main() -> Result<()> {
 		});
 
 		character_screen::render(
-			&[(&data.charmap_bind_group, charmap_size)],
+			&[&data.charmap],
 			&mut render_pass,
 			&mut data.render_data,
-			&gpu_instance,
 		);
 
 		simple_gpu::finish_render_pass(render_pass);
