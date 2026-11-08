@@ -34,7 +34,10 @@ pub use wgpu_defs::*;
 
 
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Result, bail};
+#[cfg(feature = "image")]
+use anyhow::{Context, anyhow};
+#[cfg(feature = "image")]
 use std::{ffi::OsStr, path::Path};
 
 
@@ -116,6 +119,7 @@ pub fn render(
 /// # Errors
 ///
 /// This errors if `image::open` fails or if the size of the image is not exactly 175x239
+#[cfg(feature = "image")]
 pub fn load_character_atlas(
 	path: impl AsRef<Path>,
 	gpu_instance: &simple_gpu::GpuInstance,
