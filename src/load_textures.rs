@@ -1,19 +1,29 @@
-use crate::*;
+use crate::{CHAR_HEIGHT, CHAR_WIDTH};
+use anyhow::{Context, Result, bail};
 use std::path::Path;
 
 
 
-pub fn load_all_textures(textures_path: impl AsRef<Path>, gpu_instance: &simple_gpu::GpuInstance) -> Result<wgpu::Texture> {
+/// Loads up to 256 textures and places them correctly in an atlas. You probably shouldn't use this and just create the atlas manually
+///
+/// # Errors
+///
+/// This function returns an error if the `image` crate fails to load an image from path
+pub fn load_all_textures(
+	textures_path: impl AsRef<Path>,
+	gpu_instance: &simple_gpu::GpuInstance,
+) -> Result<wgpu::Texture> {
 	let textures_path = textures_path.as_ref();
+	#[allow(clippy::large_stack_arrays)]
 	let mut atlas_data = [0; CHAR_WIDTH * CHAR_HEIGHT * 4 * 256];
-	
+
 	for i in 0..=255 {
 		let path = textures_path.join(i.to_string() + ".png");
 		if path.exists() {
 			load_and_place_tex(&mut atlas_data, i, path)?;
 		}
 	}
-	
+
 	let texture = gpu_instance
 		.wgpu_device
 		.create_texture(&wgpu::TextureDescriptor {
@@ -49,7 +59,7 @@ pub fn load_all_textures(textures_path: impl AsRef<Path>, gpu_instance: &simple_
 			depth_or_array_layers: 1,
 		},
 	);
-	
+
 	Ok(texture)
 }
 
@@ -58,18 +68,32 @@ pub fn load_all_textures(textures_path: impl AsRef<Path>, gpu_instance: &simple_
 const CHAR_STRIDE: usize = CHAR_WIDTH * 4;
 const ATLAS_STRIDE: usize = CHAR_STRIDE * 16;
 
-pub fn load_and_place_tex(atlas_data: &mut [u8; CHAR_WIDTH * CHAR_HEIGHT * 4 * 256], index: u8, path: impl AsRef<Path>) -> Result<()> {
-	
+/// Loads a texture from file and places it correctly in an atlas
+///
+/// # Errors
+///
+/// This function returns an error if the `image` crate fails to load an image from path
+pub fn load_and_place_tex(
+	atlas_data: &mut [u8; CHAR_WIDTH * CHAR_HEIGHT * 4 * 256],
+	index: u8,
+	path: impl AsRef<Path>,
+) -> Result<()> {
 	let path = path.as_ref();
 	let texture_image =
 		image::open(path).with_context(|| format!("Failed to read file {}", path.display()))?;
 	let size = (texture_image.width(), texture_image.height());
 	if size != (CHAR_WIDTH as u32, CHAR_HEIGHT as u32) {
-		bail!("Size of texture at {path:?} must be 10x12, but is {}x{}", size.0, size.1);
+		bail!(
+			"Size of texture at {} must be 10x12, but is {}x{}",
+			path.display(),
+			size.0,
+			size.1
+		);
 	}
-	
+
 	let tex_data = &*texture_image.into_rgba8();
-	let atlas_row_pos = (index as usize & 0x0F) * CHAR_STRIDE + (index as usize >> 4) * ATLAS_STRIDE * CHAR_HEIGHT;
+	let atlas_row_pos =
+		(index as usize & 0x0F) * CHAR_STRIDE + (index as usize >> 4) * ATLAS_STRIDE * CHAR_HEIGHT;
 	unsafe {
 		let mut tex_src = tex_data.as_ptr();
 		let mut atlas_dest = atlas_data.as_mut_ptr().add(atlas_row_pos);
@@ -79,6 +103,6 @@ pub fn load_and_place_tex(atlas_data: &mut [u8; CHAR_WIDTH * CHAR_HEIGHT * 4 * 2
 			atlas_dest = atlas_dest.add(ATLAS_STRIDE);
 		}
 	}
-	
+
 	Ok(())
 }

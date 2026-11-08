@@ -1,10 +1,9 @@
-#![allow(unused)]
-#![warn(unused_must_use)]
+//#![allow(unused)]
+//#![warn(unused_must_use)]
 
 
 
 pub use anyhow::*;
-pub use bytemuck::Zeroable;
 pub use log::info;
 pub use sdl3::{
 	event::{Event, WindowEvent},
@@ -15,20 +14,16 @@ pub use std::{path::PathBuf, time::Instant};
 
 
 pub struct ProgramData {
-	
 	pub should_quit: bool,
-	pub last_dt_instant: Instant,
 	pub fps_counter: simple_gpu::FpsCounter,
-	
+
 	pub screen_size: (u32, u32),
 	pub aspect_ratio: f32,
-	
+
 	pub render_data: character_screen::RenderData,
 	pub char_map_buffer: simple_gpu::GpuBuffer<u8>,
 	pub char_map_bind_group: wgpu::BindGroup,
-	
 }
-
 
 
 
@@ -41,9 +36,9 @@ fn main() -> Result<()> {
 		}
 	}
 	env_logger::init();
-	
+
 	let assets_path = get_assets_path()?;
-	
+
 	// sdl
 	let sdl = sdl3::init()?;
 	let video = sdl.video()?;
@@ -56,9 +51,9 @@ fn main() -> Result<()> {
 		.build()?;
 	let window_size = window.size();
 	let mut event_pump = sdl.event_pump()?;
-	
+
 	// basics
-	let mut gpu_instance = simple_gpu::init(wgpu::Limits::defaults(), wgpu::MemoryHints::Performance)?;
+	let gpu_instance = simple_gpu::init(wgpu::Limits::defaults(), wgpu::MemoryHints::Performance)?;
 	let (window, window_surface) = simple_gpu::get_window_surface_mut(
 		&gpu_instance,
 		&mut window,
@@ -66,53 +61,60 @@ fn main() -> Result<()> {
 		wgpu::PresentMode::AutoVsync,
 	);
 	let mut window_surface = window_surface?;
-	
+
 	// textures
 	let textures_path = assets_path.join("textures");
 	let char_atlas_tex = character_screen::load_all_textures(textures_path, &gpu_instance)?;
-	let color_lut = simple_gpu::load_texture_from_path(assets_path.join("color_lut.png"), wgpu::FilterMode::Nearest, 1, &gpu_instance)?;
+	let color_lut = simple_gpu::load_texture_from_path(
+		assets_path.join("color_lut.png"),
+		wgpu::FilterMode::Nearest,
+		1,
+		&gpu_instance,
+	)?;
 	assert_eq!(color_lut.settings.size, (16, 16));
 	let color_lut = color_lut.wgpu_texture;
-	
-	let render_data = character_screen::make_render_data(char_atlas_tex, color_lut, window_surface.wgpu_format, &gpu_instance);
-	
+
+	let render_data = character_screen::make_render_data(
+		char_atlas_tex,
+		color_lut,
+		window_surface.wgpu_format,
+		&gpu_instance,
+	);
+
 	// character map
-	let (mut char_map_buffer, char_map_bind_group, charmap_size) = character_screen::make_character_map((96, 45), &render_data, &gpu_instance);
+	let (mut char_map_buffer, char_map_bind_group, charmap_size) =
+		character_screen::make_character_map((96, 45), &render_data, &gpu_instance);
 	for i in 0..128 {
-		char_map_buffer[i*4] = i as u8;
-		char_map_buffer[i*4+1] = 4;
-		char_map_buffer[i*4+2] = 1;
+		char_map_buffer[i * 4] = i as u8;
+		char_map_buffer[i * 4 + 1] = 4;
+		char_map_buffer[i * 4 + 2] = 1;
 	}
-	place_text("HELLO, WORLD!", (16, 16), (0, 1, 0), &mut char_map_buffer, charmap_size);
+	place_text(
+		"HELLO, WORLD!",
+		(16, 16),
+		(0, 1, 0),
+		&mut char_map_buffer,
+		charmap_size,
+	);
 	simple_gpu::sync_buffer(&mut char_map_buffer, &gpu_instance);
-	
+
 	// assemble program's data
 	let mut data = ProgramData {
-		
 		should_quit: false,
-		last_dt_instant: Instant::now(),
 		fps_counter: simple_gpu::FpsCounter::new(),
-		
+
 		screen_size: window_size,
 		aspect_ratio: window_size.0 as f32 / window_size.1 as f32,
-		
+
 		render_data,
 		char_map_buffer,
 		char_map_bind_group,
-		
 	};
-	
-	
-	
+
+
+
 	window.show();
 	while !data.should_quit {
-		// initial update
-		let new_dt_instant = Instant::now();
-		let dt = new_dt_instant
-			.duration_since(data.last_dt_instant)
-			.as_secs_f32();
-		data.last_dt_instant = new_dt_instant;
-		
 		// handle events
 		for event in event_pump.poll_iter() {
 			match event {
@@ -147,10 +149,7 @@ fn main() -> Result<()> {
 				}
 			}
 		}
-		
-		// update
-		let keyboard_state = KeyboardState::new(&event_pump);
-		
+
 		// render
 		let (surface_tex, surface_tex_view, mut command_encoder) =
 			match simple_gpu::start_frame("render frame", &window_surface, &gpu_instance) {
@@ -165,47 +164,61 @@ fn main() -> Result<()> {
 					continue;
 				}
 			};
-		
+
 		let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
 			label: Some("Character Map Render Pass"),
-			color_attachments: &[
-				Some(wgpu::RenderPassColorAttachment {
-					view: &surface_tex_view,
-					depth_slice: None,
-					resolve_target: None,
-					ops: wgpu::Operations {
-						load: wgpu::LoadOp::Load,
-						store: wgpu::StoreOp::Store,
-					},
-				}),
-			],
+			color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+				view: &surface_tex_view,
+				depth_slice: None,
+				resolve_target: None,
+				ops: wgpu::Operations {
+					load: wgpu::LoadOp::Load,
+					store: wgpu::StoreOp::Store,
+				},
+			})],
 			depth_stencil_attachment: None,
 			timestamp_writes: None,
 			occlusion_query_set: None,
 			multiview_mask: None,
 		});
-		
-		character_screen::render(&[(&data.char_map_bind_group, charmap_size)], data.screen_size, &mut render_pass, &mut data.render_data, &gpu_instance);
-		
+
+		character_screen::render(
+			&[(&data.char_map_bind_group, charmap_size)],
+			data.screen_size,
+			&mut render_pass,
+			&mut data.render_data,
+			&gpu_instance,
+		);
+
 		simple_gpu::finish_render_pass(render_pass);
-		
+
 		simple_gpu::finish_frame(command_encoder, surface_tex, &gpu_instance);
-		
+
 		data.fps_counter.tick();
 	}
-	
+
 	Ok(())
 }
 
 
 
-pub fn place_text(text: impl AsRef<str>, pos: (u16, u16), colors: (u8, u8, u8), charmap_buffer: &mut simple_gpu::GpuBuffer<u8>, charmap_size: (u16, u16)) {
+pub fn place_text(
+	text: impl AsRef<str>,
+	pos: (u16, u16),
+	colors: (u8, u8, u8),
+	charmap_buffer: &mut simple_gpu::GpuBuffer<u8>,
+	charmap_size: (u16, u16),
+) {
 	let mut pos = (pos.0 as usize + pos.1 as usize * charmap_size.0 as usize) * 4;
 	for c in text.as_ref().chars() {
-		charmap_buffer[pos] = c as u8; pos += 1;
-		charmap_buffer[pos] = colors.0; pos += 1;
-		charmap_buffer[pos] = colors.1; pos += 1;
-		charmap_buffer[pos] = colors.2; pos += 1;
+		charmap_buffer[pos] = c as u8;
+		pos += 1;
+		charmap_buffer[pos] = colors.0;
+		pos += 1;
+		charmap_buffer[pos] = colors.1;
+		pos += 1;
+		charmap_buffer[pos] = colors.2;
+		pos += 1;
 	}
 }
 
