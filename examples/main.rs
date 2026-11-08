@@ -58,20 +58,15 @@ fn main() -> Result<()> {
 	let mut window_surface = window_surface?;
 
 	// textures
-	let char_atlas_tex = simple_gpu::load_texture_from_path(
-		assets_path.join("atlas.png"),
-		wgpu::FilterMode::Nearest,
-		1,
-		&gpu_instance,
-	)?;
+	let char_atlas_tex =
+		character_screen::load_character_atlas(assets_path.join("atlas.png"), &gpu_instance)?;
 	let color_lut = simple_gpu::load_texture_from_path(
 		assets_path.join("color_lut.png"),
 		wgpu::FilterMode::Nearest,
 		1,
 		&gpu_instance,
 	)?;
-	assert_eq!(char_atlas_tex.settings.size, (160, 224));
-	assert_eq!(color_lut.settings.size, (16, 16));
+	debug_assert_eq!(color_lut.settings.size, (16, 16));
 	let char_atlas_tex = char_atlas_tex.wgpu_texture;
 	let color_lut = color_lut.wgpu_texture;
 
@@ -247,17 +242,17 @@ pub fn place_border(
 			charmap_buffer[($x + $y * charmap_size.0) as usize * 4 + 3] = colors.2;
 		};
 	}
-	for x in left_edge + 1 ..= right_edge - 1 {
+	for x in left_edge + 1..=right_edge - 1 {
 		place_char!(2, x, top_edge);
 		place_char!(2, x, bottom_edge);
 	}
-	for y in top_edge + 1 ..= bottom_edge - 1 {
+	for y in top_edge + 1..=bottom_edge - 1 {
 		place_char!(3, left_edge, y);
 		place_char!(3, right_edge, y);
 	}
-	place_char!(1, left_edge , top_edge   );
-	place_char!(1, right_edge, top_edge   );
-	place_char!(1, left_edge , bottom_edge);
+	place_char!(1, left_edge, top_edge);
+	place_char!(1, right_edge, top_edge);
+	place_char!(1, left_edge, bottom_edge);
 	place_char!(1, right_edge, bottom_edge);
 }
 

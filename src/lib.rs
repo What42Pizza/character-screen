@@ -34,6 +34,11 @@ pub use wgpu_defs::*;
 
 
 
+use anyhow::{Context, Result, anyhow, bail};
+use std::{ffi::OsStr, path::Path};
+
+
+
 /// Everything this crate needs for rendering character maps
 pub struct RenderData {
 	/// The wgpu texture for the character textures, must hold 16 chars x 16 chars (160x224 total size)
@@ -101,4 +106,76 @@ pub fn render(
 		render_pass.set_bind_group(1, *charmap_bind, &[]);
 		render_pass.draw(0..3, 0..1);
 	}
+}
+
+
+
+/// Loads a character texture atlas from a file path. The texture is expected to be 175x239 (10x14 characters textures with a one pixel gap in between), and the returned texture is 160x224 (10x16 chars with no gaps)
+pub fn load_character_atlas(
+	path: impl AsRef<Path>,
+	gpu_instance: &simple_gpu::GpuInstance,
+) -> Result<simple_gpu::Texture> {
+	let path = path.as_ref();
+	
+	let texture_image =
+		image::open(path).with_context(|| format!("Failed to read file {}", path.display()))?;
+	let size = (texture_image.width(), texture_image.height());
+	if size != (175, 239) {
+		bail!(
+			"Character atlas must be 175x239 (10x14 character textures with a one pixel gap between each character), but the actual size is {}x{}",
+			size.0,
+			size.1
+		);
+	}
+	let file_name = path
+		.file_name()
+		.map(OsStr::to_string_lossy)
+		.ok_or_else(|| anyhow!("Failed to get file name from path {}", path.display()))?;
+	
+	let mut texture_data = texture_image.into_rgba8();
+	let texture_data = remove_padding(&mut *texture_data)?;
+	
+	let texture = simple_gpu::create_texture(
+		file_name,
+		(160, 224),
+		wgpu::TextureFormat::Rgba8Unorm,
+		wgpu::FilterMode::Nearest,
+		1,
+		gpu_instance,
+	);
+	simple_gpu::update_texture(&texture, texture_data, gpu_instance);
+	
+	Ok(texture)
+}
+
+
+
+/// Removes the padding from a character atlas texture. The input texture must be RGBA8, 175x239 (CHAR_SIZE*16+15, one pixel gap between each character texture), and the data is packed into an RGBA8 160x224 texture. This both mutates the given data and returns a slice for the compacted data
+pub fn remove_padding(data: &mut [u8]) -> Result<&[u8]> {
+	const CHAR_STRIDE: usize = CHAR_WIDTH * 4;
+	const EXPECTED_DATA_LEN: usize = (CHAR_WIDTH * 16 + 15) * (CHAR_HEIGHT * 16 + 15) * 4;
+	if data.len() != EXPECTED_DATA_LEN {
+		bail!(
+			"Expected input character texture atlas to be {} bytes (175x239, 10x14 characters with a one pixel gap between each character), but the actual length is {}",
+			EXPECTED_DATA_LEN,
+			data.len()
+		);
+	}
+
+	unsafe {
+		let mut src = data.as_ptr();
+		let mut dst = data.as_mut_ptr();
+		for _char_y in 0..16 {
+			for _in_char_y in 0..CHAR_HEIGHT {
+				for _char_x in 0..16 {
+					dst.copy_from(src, CHAR_STRIDE);
+					src = src.add(CHAR_STRIDE + 4);
+					dst = dst.add(CHAR_STRIDE);
+				}
+				src = src.sub(4);
+			}
+			src = src.add(CHAR_STRIDE * 16 + 15 * 4);
+		}
+	}
+	Ok(&data[..160 * 224 * 4])
 }
