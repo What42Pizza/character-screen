@@ -38,7 +38,7 @@ fn main() -> Result<()> {
 	let sdl = sdl3::init()?;
 	let video = sdl.video()?;
 	let mut window = video
-		.window("Character Screen", 1280, 720)
+		.window("Character Screen", 96 * 10, 45 * 12)
 		.position_centered()
 		.resizable()
 		.hidden()
