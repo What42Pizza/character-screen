@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use crate::{RenderData, UniformsRawData};
+use crate::{CHAR_HEIGHT, CHAR_WIDTH, RenderData, UniformsRawData};
 
 
 
@@ -269,7 +269,10 @@ pub fn make_render_data(
 		"shaders/main.fsh",
 		include_str!("shaders/main.fsh"),
 		gpu_instance,
-		&[],
+		&[
+			("CHAR_WIDTH", &CHAR_WIDTH.to_string()),
+			("CHAR_HEIGHT", &CHAR_HEIGHT.to_string()),
+		],
 	);
 
 	let char_atlas_view = char_atlas_tex.create_view(&wgpu::TextureViewDescriptor::default());

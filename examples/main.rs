@@ -1,8 +1,3 @@
-//#![allow(unused)]
-//#![warn(unused_must_use)]
-
-
-
 pub use anyhow::*;
 pub use log::info;
 pub use sdl3::{
@@ -184,7 +179,6 @@ fn main() -> Result<()> {
 
 		character_screen::render(
 			&[(&data.char_map_bind_group, charmap_size)],
-			data.screen_size,
 			&mut render_pass,
 			&mut data.render_data,
 			&gpu_instance,

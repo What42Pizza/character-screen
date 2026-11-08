@@ -1,12 +1,12 @@
 #version 450
 
-#define CHAR_WIDTH 10
-#define CHAR_HEIGHT 12
+// these are given by the rust code to naga:
+//#define CHAR_WIDTH 10
+//#define CHAR_HEIGHT 12
 #define CHAR_SIZE uvec2(CHAR_WIDTH, CHAR_HEIGHT)
 
 layout(set = 0, binding = 0) uniform all_uniforms {
 	uvec2 charmap_size;
-	uvec2 target_size;
 };
 layout(set = 0, binding = 1) uniform texture2D char_atlas_tex;
 layout(set = 0, binding = 2) uniform texture2D color_lut_tex;

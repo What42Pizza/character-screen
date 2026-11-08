@@ -50,7 +50,7 @@ pub struct RenderData {
 	/// The shader used for rendering the character map
 	pub main_shader: simple_gpu::Shaders,
 
-	/// Uniforms, probably can be removed!
+	/// Uniforms for misc data
 	pub uniforms_buffer: simple_gpu::UniformsBuffer<UniformsRawData>,
 	/// A simple non-filtering sampler
 	pub nearest_sampler: wgpu::Sampler,
@@ -68,26 +68,22 @@ pub struct RenderData {
 	pub curr_pipeline_output_format: wgpu::TextureFormat,
 }
 
-/// Misc data used for rendering charmaps, probably can be removed!
+/// Misc data used for rendering charmaps
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C)]
 pub struct UniformsRawData {
 	/// size of the current charmap
 	pub charmap_size: [u32; 2],
-	/// size of the color attachment
-	pub target_size: [u32; 2],
 }
 
 /// Updates the uniforms buffer
 #[inline]
 pub fn update_uniforms(
 	uniforms_buffer: &mut simple_gpu::UniformsBuffer<UniformsRawData>,
-	target_size: (u32, u32),
 	charmap_size: (u16, u16),
 ) {
 	let uniforms = &mut uniforms_buffer.cpu_copy;
 	uniforms.charmap_size = [u32::from(charmap_size.0), u32::from(charmap_size.1)];
-	uniforms.target_size = target_size.into();
 }
 
 
@@ -96,7 +92,6 @@ pub fn update_uniforms(
 #[inline]
 pub fn render(
 	char_maps: &[(&wgpu::BindGroup, (u16, u16))],
-	target_size: (u32, u32),
 	render_pass: &mut wgpu::RenderPass,
 	render_data: &mut RenderData,
 	gpu_instance: &simple_gpu::GpuInstance,
@@ -104,7 +99,7 @@ pub fn render(
 	render_pass.set_pipeline(&render_data.pipeline);
 	render_pass.set_bind_group(0, &render_data.main_bind_group, &[]);
 	for (charmap_bind, charmap_size) in char_maps {
-		update_uniforms(&mut render_data.uniforms_buffer, target_size, *charmap_size);
+		update_uniforms(&mut render_data.uniforms_buffer, *charmap_size);
 		simple_gpu::sync_uniforms_buffer(&render_data.uniforms_buffer, gpu_instance);
 		render_pass.set_bind_group(1, *charmap_bind, &[]);
 		render_pass.draw(0..3, 0..1);
