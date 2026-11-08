@@ -77,16 +77,13 @@ fn main() -> Result<()> {
 	let render_data = character_screen::make_render_data(char_atlas_tex, color_lut, window_surface.wgpu_format, &gpu_instance);
 	
 	// character map
-	let (mut char_map_buffer, char_map_bind_group, size) = character_screen::make_character_map((96, 45), &render_data, &gpu_instance);
+	let (mut char_map_buffer, char_map_bind_group, charmap_size) = character_screen::make_character_map((96, 45), &render_data, &gpu_instance);
 	for i in 0..128 {
 		char_map_buffer[i*4] = i as u8;
 		char_map_buffer[i*4+1] = 4;
 		char_map_buffer[i*4+2] = 1;
 	}
-	for (i, c) in "HELLO, WORLD!".chars().enumerate() {
-		char_map_buffer[(i + 128) * 4] = c as u8;
-		char_map_buffer[(i + 128) * 4 + 2] = 1;
-	}
+	place_text("HELLO, WORLD!", (16, 16), (0, 1, 0), &mut char_map_buffer, charmap_size);
 	simple_gpu::sync_buffer(&mut char_map_buffer, &gpu_instance);
 	
 	// assemble program's data
@@ -188,7 +185,7 @@ fn main() -> Result<()> {
 			multiview_mask: None,
 		});
 		
-		character_screen::render(&[(&data.char_map_bind_group, size)], data.screen_size, &mut render_pass, &mut data.render_data, &gpu_instance);
+		character_screen::render(&[(&data.char_map_bind_group, charmap_size)], data.screen_size, &mut render_pass, &mut data.render_data, &gpu_instance);
 		
 		simple_gpu::finish_render_pass(render_pass);
 		
@@ -198,6 +195,18 @@ fn main() -> Result<()> {
 	}
 	
 	Ok(())
+}
+
+
+
+pub fn place_text(text: impl AsRef<str>, pos: (u16, u16), colors: (u8, u8, u8), charmap_buffer: &mut simple_gpu::GpuBuffer<u8>, charmap_size: (u16, u16)) {
+	let mut pos = (pos.0 as usize + pos.1 as usize * charmap_size.0 as usize) * 4;
+	for c in text.as_ref().chars() {
+		charmap_buffer[pos] = c as u8; pos += 1;
+		charmap_buffer[pos] = colors.0; pos += 1;
+		charmap_buffer[pos] = colors.1; pos += 1;
+		charmap_buffer[pos] = colors.2; pos += 1;
+	}
 }
 
 
