@@ -47,6 +47,8 @@ pub struct RenderData {
 	
 	pub char_atlas_tex: wgpu::Texture,
 	pub char_atlas_view: wgpu::TextureView,
+	pub color_lut_tex: wgpu::Texture,
+	pub color_lut_view: wgpu::TextureView,
 	pub main_shader: simple_gpu::Shaders,
 	
 	pub uniforms_buffer: simple_gpu::UniformsBuffer<UniformsRawData>,
@@ -125,11 +127,20 @@ fn main() -> Result<()> {
 	// textures
 	let textures_path = assets_path.join("textures");
 	let char_atlas_tex = load_all_textures(textures_path, &gpu_instance)?;
+	let color_lut = simple_gpu::load_texture_from_path(assets_path.join("color_lut.png"), wgpu::FilterMode::Nearest, 1, &gpu_instance)?;
+	assert_eq!(color_lut.settings.size, (16, 16));
+	let color_lut = color_lut.wgpu_texture;
 	
-	let render_data = make_render_data(char_atlas_tex, main_shader, window_surface.wgpu_format, &gpu_instance);
+	let render_data = make_render_data(char_atlas_tex, color_lut, main_shader, window_surface.wgpu_format, &gpu_instance);
 	
 	// character map
-	let (char_map_buffer, char_map_bind_group, size) = make_character_map((96, 45), &render_data, &gpu_instance);
+	let (mut char_map_buffer, char_map_bind_group, size) = make_character_map((96, 45), &render_data, &gpu_instance);
+	for i in 0..128 {
+		char_map_buffer[i*4] = i as u8;
+		char_map_buffer[i*4+1] = 4;
+		char_map_buffer[i*4+2] = 1;
+	}
+	simple_gpu::sync_buffer(&mut char_map_buffer, &gpu_instance);
 	
 	// assemble program's data
 	let mut data = ProgramData {

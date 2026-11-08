@@ -8,9 +8,11 @@ layout(set = 0, binding = 0) uniform all_uniforms {
 	uvec2 charmap_size;
 	uvec2 target_size;
 };
-layout(set = 0, binding = 1) uniform texture2D tex;
-layout(set = 0, binding = 2) uniform sampler tex_sampler;
-#define char_atlas sampler2D(tex, tex_sampler)
+layout(set = 0, binding = 1) uniform texture2D char_atlas_tex;
+layout(set = 0, binding = 2) uniform texture2D color_lut_tex;
+layout(set = 0, binding = 3) uniform sampler nearest_sampler;
+#define char_atlas sampler2D(char_atlas_tex, nearest_sampler)
+#define color_lut sampler2D(color_lut_tex, nearest_sampler)
 layout(set = 1, binding = 0, std430) readonly buffer CharacterMap {
     uint data[];
 } charmap;
@@ -31,6 +33,16 @@ void main() {
 	uvec2 in_char_coord = texel_coord % CHAR_SIZE;
 	vec2 char_tex_coord = uvec2((char_index & 0x0F) * CHAR_WIDTH, (char_index >> 4) * CHAR_HEIGHT) + in_char_coord + 0.5;
 	vec4 char_tex_color = texture(char_atlas, char_tex_coord / (CHAR_SIZE * 16));
-	frag_color = char_tex_color;
+	
+	vec2 color_1_coord = uvec2((char_data & 0x00000F00) >> 8 , (char_data & 0x0000F000) >> 12) + 0.5;
+	vec3 color_1 = texture(color_lut, color_1_coord / 16.0).rgb;
+	vec2 color_2_coord = uvec2((char_data & 0x000F0000) >> 16, (char_data & 0x00F00000) >> 20) + 0.5;
+	vec3 color_2 = texture(color_lut, color_2_coord / 16.0).rgb;
+	vec2 color_3_coord = uvec2((char_data & 0x0F000000) >> 24, (char_data & 0xF0000000) >> 28) + 0.5;
+	vec3 color_3 = texture(color_lut, color_3_coord / 16.0).rgb;
+	
+	frag_color.rgb = mix(color_1, color_2, char_tex_color.r);
+	frag_color.rgb = mix(frag_color.rgb, color_3, char_tex_color.g);
+	frag_color.a = char_tex_color.a;
 	
 }

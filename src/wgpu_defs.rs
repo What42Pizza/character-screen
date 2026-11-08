@@ -17,7 +17,7 @@ pub fn make_main_bind_group_layout(gpu_instance: &simple_gpu::GpuInstance) -> wg
 				count: None,
 			},
 			wgpu::BindGroupLayoutEntry {
-				// texture
+				// char atlas texture
 				binding: 1,
 				visibility: wgpu::ShaderStages::FRAGMENT,
 				ty: wgpu::BindingType::Texture {
@@ -28,8 +28,19 @@ pub fn make_main_bind_group_layout(gpu_instance: &simple_gpu::GpuInstance) -> wg
 				count: None,
 			},
 			wgpu::BindGroupLayoutEntry {
-				// sampler
+				// color LUT texture
 				binding: 2,
+				visibility: wgpu::ShaderStages::FRAGMENT,
+				ty: wgpu::BindingType::Texture {
+					multisampled: false,
+					view_dimension: wgpu::TextureViewDimension::D2,
+					sample_type: wgpu::TextureSampleType::Float { filterable: false },
+				},
+				count: None,
+			},
+			wgpu::BindGroupLayoutEntry {
+				// sampler
+				binding: 3,
 				visibility: wgpu::ShaderStages::FRAGMENT,
 				ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
 				count: None,
@@ -59,7 +70,7 @@ pub fn make_char_map_bind_group_layout(gpu_instance: &simple_gpu::GpuInstance) -
 
 
 
-pub fn make_main_bind_group(main_bind_group_layout: &wgpu::BindGroupLayout, uniforms_buffer: &simple_gpu::UniformsBuffer<UniformsRawData>, char_atlas_view: &wgpu::TextureView, nearest_sampler: &wgpu::Sampler, gpu_instance: &simple_gpu::GpuInstance) -> wgpu::BindGroup {
+pub fn make_main_bind_group(main_bind_group_layout: &wgpu::BindGroupLayout, uniforms_buffer: &simple_gpu::UniformsBuffer<UniformsRawData>, char_atlas_view: &wgpu::TextureView, color_lut_view: &wgpu::TextureView, nearest_sampler: &wgpu::Sampler, gpu_instance: &simple_gpu::GpuInstance) -> wgpu::BindGroup {
 	gpu_instance
 		.wgpu_device
 		.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -76,6 +87,10 @@ pub fn make_main_bind_group(main_bind_group_layout: &wgpu::BindGroupLayout, unif
 				},
 				wgpu::BindGroupEntry {
 					binding: 2,
+					resource: wgpu::BindingResource::TextureView(&color_lut_view),
+				},
+				wgpu::BindGroupEntry {
+					binding: 3,
 					resource: wgpu::BindingResource::Sampler(&nearest_sampler),
 				},
 			],
@@ -145,14 +160,7 @@ pub fn make_pipeline(main_shader: &simple_gpu::Shaders, pipeline_layout: &wgpu::
 pub fn make_character_map_buffer(size: (u16, u16), gpu_instance: &simple_gpu::GpuInstance) -> simple_gpu::GpuBuffer<u8> {
 	let buf_size  = size.0 as usize * size.1 as usize * 4;
 	let mut character_map_buffer = simple_gpu::create_buffer::<u8>("Main Character Map Buffer", buf_size as u32, wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE, gpu_instance);
-	*character_map_buffer = vec![0; buf_size];
-	for i in 0..128 {
-		character_map_buffer[i*4] = i as u8;
-	}
-	//character_map_buffer[4] = 65;
-	//character_map_buffer[5] = 1;
-	//character_map_buffer[8] = 66;
-	//character_map_buffer[9] = 1;
+	*character_map_buffer = vec![32; buf_size];
 	simple_gpu::sync_buffer(&mut character_map_buffer, gpu_instance);
 	character_map_buffer
 }
@@ -179,20 +187,23 @@ pub fn make_nearest_sampler(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::Sam
 
 
 
-pub fn make_render_data(char_atlas_tex: wgpu::Texture, main_shader: simple_gpu::Shaders, output_format: wgpu::TextureFormat, gpu_instance: &simple_gpu::GpuInstance) -> RenderData {
+pub fn make_render_data(char_atlas_tex: wgpu::Texture, color_lut_tex: wgpu::Texture, main_shader: simple_gpu::Shaders, output_format: wgpu::TextureFormat, gpu_instance: &simple_gpu::GpuInstance) -> RenderData {
 	
 	let char_atlas_view = char_atlas_tex.create_view(&wgpu::TextureViewDescriptor::default());
+	let color_lut_view = color_lut_tex.create_view(&wgpu::TextureViewDescriptor::default());
 	let uniforms_buffer = simple_gpu::create_uniforms_buffer::<UniformsRawData>(&gpu_instance);
 	let nearest_sampler = make_nearest_sampler(&gpu_instance);
 	let main_bind_group_layout = make_main_bind_group_layout(&gpu_instance);
 	let char_map_bind_group_layout = make_char_map_bind_group_layout(&gpu_instance);
-	let main_bind_group = make_main_bind_group(&main_bind_group_layout, &uniforms_buffer, &char_atlas_view, &nearest_sampler, &gpu_instance);
+	let main_bind_group = make_main_bind_group(&main_bind_group_layout, &uniforms_buffer, &char_atlas_view, &color_lut_view, &nearest_sampler, &gpu_instance);
 	let pipeline_layout = make_pipeline_layout(&main_bind_group_layout, &char_map_bind_group_layout, &gpu_instance);
 	let pipeline = make_pipeline(&main_shader, &pipeline_layout, output_format, &gpu_instance);
 	
 	RenderData {
 		char_atlas_tex,
 		char_atlas_view,
+		color_lut_tex,
+		color_lut_view,
 		main_shader,
 		uniforms_buffer,
 		nearest_sampler,
