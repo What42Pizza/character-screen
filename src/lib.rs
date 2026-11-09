@@ -31,19 +31,18 @@ pub const CHAR_HEIGHT: usize = 14;
 /// Functions for initializing wgpu stuff
 pub mod wgpu_defs;
 pub use wgpu_defs::*;
+/// Functions dealing with character texture atlases
+pub mod atlas;
+pub use atlas::*;
 
 
 
-#[cfg(feature = "image")]
-use anyhow::{Context, anyhow};
-use anyhow::{Result, bail};
-#[cfg(feature = "image")]
-use std::{ffi::OsStr, path::Path};
+use std::ops::{Deref, DerefMut};
 
 
 
-/// Everything this crate needs for rendering character maps
-pub struct RenderData {
+/// Holds all the miscellaneous data for rendering character maps
+pub struct CharmapRenderData {
 	/// A simple non-filtering sampler
 	pub nearest_sampler: wgpu::Sampler,
 	/// The shader used for rendering the character map
@@ -63,35 +62,66 @@ pub struct RenderData {
 /// Misc data used for rendering charmaps
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C)]
-pub struct UniformsRawData {
+pub struct CharmapRawUniforms {
 	/// size of the current charmap
 	pub charmap_size: [u32; 2],
 }
 
-/// Updates the uniforms buffer
-#[inline]
-pub fn update_uniforms(
-	uniforms_buffer: &mut simple_gpu::UniformsBuffer<UniformsRawData>,
-	charmap_size: (u16, u16),
-) {
-	let uniforms = &mut uniforms_buffer.cpu_copy;
-	uniforms.charmap_size = [u32::from(charmap_size.0), u32::from(charmap_size.1)];
-}
 
 
-
-/// Holds all the data for a character map, with all character data being stored in `Self.buffer`
+/// Holds all the data for a character map
+///
+/// The character data is stored is `Self.buffer.cpu_copy`, which this type can be automatically dereferenced as
 pub struct Charmap {
 	/// Holds the name, this is given to wgpu for easier debugging
 	pub name: String,
 	/// The size that this charmap was created as
 	pub size: (u16, u16),
 	/// Holds the size of the charmap
-	pub uniforms_buffer: simple_gpu::UniformsBuffer<UniformsRawData>,
+	pub uniforms_buffer: simple_gpu::UniformsBuffer<CharmapRawUniforms>,
 	/// Holds both the cpu copy and (a handle for) the gpu copy of the charmap data
 	pub buffer: simple_gpu::GpuBuffer<u8>,
 	/// Holds the resources that are given to the shader
 	pub bind_group: wgpu::BindGroup,
+}
+
+impl Charmap {
+	/// Places a character (or generic value) at a position within the charmap
+	#[inline]
+	pub fn place(&mut self, value: u8, pos: (u16, u16), colors: (u8, u8, u8)) {
+		let i = (pos.0 as usize + pos.1 as usize * self.size.0 as usize) * 4;
+		self.buffer[i] = value;
+		self.buffer[i + 1] = colors.0;
+		self.buffer[i + 2] = colors.1;
+		self.buffer[i + 3] = colors.2;
+	}
+	/// Gets the character (or generic value) at a position within the charmap
+	#[must_use]
+	#[inline]
+	pub fn get(&self, pos: (u16, u16)) -> (u8, u8, u8, u8) {
+		let i = (pos.0 as usize + pos.1 as usize * self.size.0 as usize) * 4;
+		(
+			self.buffer[i],
+			self.buffer[i + 1],
+			self.buffer[i + 2],
+			self.buffer[i + 3],
+		)
+	}
+}
+
+impl Deref for Charmap {
+	type Target = Vec<u8>;
+	#[inline]
+	fn deref(&self) -> &Self::Target {
+		&self.buffer
+	}
+}
+
+impl DerefMut for Charmap {
+	#[inline]
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.buffer
+	}
 }
 
 
@@ -101,96 +131,11 @@ pub struct Charmap {
 pub fn render(
 	charmaps: &[&Charmap],
 	render_pass: &mut wgpu::RenderPass,
-	render_data: &mut RenderData,
+	render_data: &mut CharmapRenderData,
 ) {
 	render_pass.set_pipeline(&render_data.pipeline);
 	for charmap in charmaps {
 		render_pass.set_bind_group(0, &charmap.bind_group, &[]);
 		render_pass.draw(0..3, 0..1);
 	}
-}
-
-
-
-/// Loads a character texture atlas from a file path
-///
-/// The texture is expected to be 175x239 (10x14 characters textures with a one pixel gap in between), and the returned texture is 160x224 (10x16 chars with no gaps)
-///
-/// # Errors
-///
-/// This errors if `image::open` fails or if the size of the image is not exactly 175x239
-#[cfg(feature = "image")]
-pub fn load_character_atlas(
-	path: impl AsRef<Path>,
-	gpu_instance: &simple_gpu::GpuInstance,
-) -> Result<simple_gpu::Texture> {
-	let path = path.as_ref();
-
-	let texture_image =
-		image::open(path).with_context(|| format!("Failed to read file {}", path.display()))?;
-	let size = (texture_image.width(), texture_image.height());
-	if size != (175, 239) {
-		bail!(
-			"Character atlas must be 175x239 (10x14 character textures with a one pixel gap between each character), but the actual size is {}x{}",
-			size.0,
-			size.1
-		);
-	}
-	let file_name = path
-		.file_name()
-		.map(OsStr::to_string_lossy)
-		.ok_or_else(|| anyhow!("Failed to get file name from path {}", path.display()))?;
-
-	let mut texture_data = texture_image.into_rgba8();
-	let texture_data = remove_padding(&mut texture_data)?;
-
-	let texture = simple_gpu::create_texture(
-		file_name,
-		(160, 224),
-		wgpu::TextureFormat::Rgba8Unorm,
-		wgpu::FilterMode::Nearest,
-		1,
-		gpu_instance,
-	);
-	simple_gpu::update_texture(&texture, texture_data, gpu_instance);
-
-	Ok(texture)
-}
-
-
-
-/// Removes the padding from a character atlas texture
-///
-/// The input texture must be RGBA8, 175x239 (`CHAR_SIZE * 16 + 15`, one pixel gap between each character texture), and the data is packed into an RGBA8 160x224 texture. This both mutates the given data and returns a slice for the compacted data
-///
-/// # Errors
-///
-/// This errors if `data.len()` is not exactly 167300 (which is 175*239*4)
-pub fn remove_padding(data: &mut [u8]) -> Result<&[u8]> {
-	const CHAR_STRIDE: usize = CHAR_WIDTH * 4;
-	const EXPECTED_DATA_LEN: usize = (CHAR_WIDTH * 16 + 15) * (CHAR_HEIGHT * 16 + 15) * 4;
-	if data.len() != EXPECTED_DATA_LEN {
-		bail!(
-			"Expected input character texture atlas to be {} bytes (175x239, 10x14 characters with a one pixel gap between each character), but the actual length is {}",
-			EXPECTED_DATA_LEN,
-			data.len()
-		);
-	}
-
-	unsafe {
-		let mut src = data.as_ptr();
-		let mut dst = data.as_mut_ptr();
-		for _char_y in 0..16 {
-			for _in_char_y in 0..CHAR_HEIGHT {
-				for _char_x in 0..16 {
-					dst.copy_from(src, CHAR_STRIDE);
-					src = src.add(CHAR_STRIDE + 4);
-					dst = dst.add(CHAR_STRIDE);
-				}
-				src = src.sub(4);
-			}
-			src = src.add(CHAR_STRIDE * 16 + 15 * 4);
-		}
-	}
-	Ok(&data[..160 * 224 * 4])
 }

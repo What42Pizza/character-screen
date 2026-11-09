@@ -15,7 +15,7 @@ pub struct ProgramData {
 	pub screen_size: (u32, u32),
 	pub aspect_ratio: f32,
 
-	pub render_data: charmap_renderer::RenderData,
+	pub render_data: charmap_renderer::CharmapRenderData,
 	pub charmap: charmap_renderer::Charmap,
 }
 
@@ -84,33 +84,20 @@ fn main() -> Result<()> {
 		&render_data,
 		&gpu_instance,
 	);
-	place_text(
-		"All Characters: ",
-		(0, 0),
-		(0, 1, 0),
-		&mut charmap.buffer,
-		charmap.size,
-	);
+	place_text("All Characters: ", (0, 0), (0, 1, 0), &mut charmap);
 	for i in 16..16 + 128 {
-		charmap.buffer[i * 4] = i as u8;
-		charmap.buffer[i * 4 + 1] = 4;
-		charmap.buffer[i * 4 + 2] = 1;
+		charmap[i * 4] = i as u8;
+		charmap[i * 4 + 1] = 4;
+		charmap[i * 4 + 2] = 1;
 	}
-	place_text(
-		"HELLO, WORLD!",
-		(16, 16),
-		(0, 1, 0),
-		&mut charmap.buffer,
-		charmap.size,
-	);
+	place_text("HELLO, WORLD!", (16, 16), (0, 1, 0), &mut charmap);
 	place_text(
 		"The quick brown fox jumped over the lazy dog.",
 		(16, 17),
 		(0, 1, 0),
-		&mut charmap.buffer,
-		charmap.size,
+		&mut charmap,
 	);
-	place_border(15, 61, 15, 18, (0, 1, 0), &mut charmap.buffer, charmap.size);
+	place_border(15, 61, 15, 18, (0, 1, 0), &mut charmap);
 	simple_gpu::sync_buffer(&mut charmap.buffer, &gpu_instance);
 
 	// assemble program's data
@@ -212,21 +199,13 @@ fn main() -> Result<()> {
 
 pub fn place_text(
 	text: impl AsRef<str>,
-	pos: (u16, u16),
+	mut pos: (u16, u16),
 	colors: (u8, u8, u8),
-	charmap_buffer: &mut simple_gpu::GpuBuffer<u8>,
-	charmap_size: (u16, u16),
+	charmap: &mut charmap_renderer::Charmap,
 ) {
-	let mut pos = (pos.0 as usize + pos.1 as usize * charmap_size.0 as usize) * 4;
 	for c in text.as_ref().chars() {
-		charmap_buffer[pos] = c as u8;
-		pos += 1;
-		charmap_buffer[pos] = colors.0;
-		pos += 1;
-		charmap_buffer[pos] = colors.1;
-		pos += 1;
-		charmap_buffer[pos] = colors.2;
-		pos += 1;
+		charmap.place(c as u8, pos, colors);
+		pos.0 += 1;
 	}
 }
 
@@ -236,29 +215,20 @@ pub fn place_border(
 	top_edge: u16,
 	bottom_edge: u16,
 	colors: (u8, u8, u8),
-	charmap_buffer: &mut simple_gpu::GpuBuffer<u8>,
-	charmap_size: (u16, u16),
+	charmap: &mut charmap_renderer::Charmap,
 ) {
-	macro_rules! place_char {
-		($char:expr, $x:ident, $y:ident) => {
-			charmap_buffer[($x + $y * charmap_size.0) as usize * 4] = $char;
-			charmap_buffer[($x + $y * charmap_size.0) as usize * 4 + 1] = colors.0;
-			charmap_buffer[($x + $y * charmap_size.0) as usize * 4 + 2] = colors.1;
-			charmap_buffer[($x + $y * charmap_size.0) as usize * 4 + 3] = colors.2;
-		};
-	}
 	for x in left_edge + 1..=right_edge - 1 {
-		place_char!(2, x, top_edge);
-		place_char!(2, x, bottom_edge);
+		charmap.place(2, (x, top_edge), colors);
+		charmap.place(2, (x, bottom_edge), colors);
 	}
 	for y in top_edge + 1..=bottom_edge - 1 {
-		place_char!(3, left_edge, y);
-		place_char!(3, right_edge, y);
+		charmap.place(3, (left_edge, y), colors);
+		charmap.place(3, (right_edge, y), colors);
 	}
-	place_char!(1, left_edge, top_edge);
-	place_char!(1, right_edge, top_edge);
-	place_char!(1, left_edge, bottom_edge);
-	place_char!(1, right_edge, bottom_edge);
+	charmap.place(1, (left_edge, top_edge), colors);
+	charmap.place(1, (right_edge, top_edge), colors);
+	charmap.place(1, (left_edge, bottom_edge), colors);
+	charmap.place(1, (right_edge, bottom_edge), colors);
 }
 
 

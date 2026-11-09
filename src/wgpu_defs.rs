@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use crate::{CHAR_HEIGHT, CHAR_WIDTH, Charmap, RenderData, UniformsRawData};
+use crate::{CHAR_HEIGHT, CHAR_WIDTH, Charmap, CharmapRawUniforms, CharmapRenderData};
 
 
 
@@ -150,13 +150,13 @@ pub fn create_charmap(
 	size: (u16, u16),
 	char_atlas_view: &wgpu::TextureView,
 	color_lut_view: &wgpu::TextureView,
-	render_data: &RenderData,
+	render_data: &CharmapRenderData,
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> Charmap {
 	let name = name.into();
 
 	let mut uniforms_buffer = simple_gpu::create_uniforms_buffer(gpu_instance);
-	uniforms_buffer.cpu_copy = UniformsRawData {
+	uniforms_buffer.cpu_copy = CharmapRawUniforms {
 		charmap_size: [u32::from(size.0), u32::from(size.1)],
 	};
 	simple_gpu::sync_uniforms_buffer(&uniforms_buffer, gpu_instance);
@@ -237,7 +237,7 @@ pub fn make_nearest_sampler(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::Sam
 pub fn make_render_data(
 	output_format: wgpu::TextureFormat,
 	gpu_instance: &simple_gpu::GpuInstance,
-) -> RenderData {
+) -> CharmapRenderData {
 	let main_shader = simple_gpu::make_glsl_shaders(
 		"shaders/main.vsh",
 		include_str!("shaders/main.vsh"),
@@ -255,7 +255,7 @@ pub fn make_render_data(
 	let pipeline_layout = make_pipeline_layout(&bind_group_layout, gpu_instance);
 	let pipeline = make_pipeline(&main_shader, &pipeline_layout, output_format, gpu_instance);
 
-	RenderData {
+	CharmapRenderData {
 		main_shader,
 		nearest_sampler,
 		bind_group_layout,
