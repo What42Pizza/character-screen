@@ -1,10 +1,10 @@
 [package]
-name = "character-screen"
+name = "charmap-renderer"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
 description = "A simple character map renderer inspired by early 8-bit graphics processors"
-repository = "https://github.com/What42Pizza/character-screen"
+repository = "https://github.com/What42Pizza/charmap-renderer"
 
 [dependencies.wgpu]
 	version = "29.*" # NOTE: wgpu 30.* seems to have some pretty bad input lag problems

@@ -34,9 +34,9 @@ pub use wgpu_defs::*;
 
 
 
-use anyhow::{Result, bail};
 #[cfg(feature = "image")]
 use anyhow::{Context, anyhow};
+use anyhow::{Result, bail};
 #[cfg(feature = "image")]
 use std::{ffi::OsStr, path::Path};
 

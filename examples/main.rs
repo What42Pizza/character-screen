@@ -15,8 +15,8 @@ pub struct ProgramData {
 	pub screen_size: (u32, u32),
 	pub aspect_ratio: f32,
 
-	pub render_data: character_screen::RenderData,
-	pub charmap: character_screen::Charmap,
+	pub render_data: charmap_renderer::RenderData,
+	pub charmap: charmap_renderer::Charmap,
 }
 
 
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
 
 	// textures
 	let char_atlas_tex =
-		character_screen::load_character_atlas(assets_path.join("atlas.png"), &gpu_instance)?;
+		charmap_renderer::load_character_atlas(assets_path.join("atlas.png"), &gpu_instance)?;
 	let color_lut = simple_gpu::load_texture_from_path(
 		assets_path.join("color_lut.png"),
 		wgpu::FilterMode::Nearest,
@@ -73,10 +73,10 @@ fn main() -> Result<()> {
 		.wgpu_texture
 		.create_view(&wgpu::TextureViewDescriptor::default());
 
-	let render_data = character_screen::make_render_data(window_surface.wgpu_format, &gpu_instance);
+	let render_data = charmap_renderer::make_render_data(window_surface.wgpu_format, &gpu_instance);
 
 	// character map
-	let mut charmap = character_screen::create_charmap(
+	let mut charmap = charmap_renderer::create_charmap(
 		"Main Charmap",
 		(96, 45),
 		&char_atlas_tex_view,
@@ -196,7 +196,7 @@ fn main() -> Result<()> {
 			multiview_mask: None,
 		});
 
-		character_screen::render(&[&data.charmap], &mut render_pass, &mut data.render_data);
+		charmap_renderer::render(&[&data.charmap], &mut render_pass, &mut data.render_data);
 
 		simple_gpu::finish_render_pass(render_pass);
 
