@@ -5,7 +5,7 @@ use crate::{CHAR_HEIGHT, CHAR_WIDTH, Charmap, CharmapRawUniforms, CharmapRenderD
 
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn make_bind_group_layout(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::BindGroupLayout {
 	gpu_instance
 		.wgpu_device
@@ -70,7 +70,7 @@ pub fn make_bind_group_layout(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::B
 
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn make_pipeline_layout(
 	bind_group_layout: &wgpu::BindGroupLayout,
 	gpu_instance: &simple_gpu::GpuInstance,
@@ -85,7 +85,7 @@ pub fn make_pipeline_layout(
 }
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn make_pipeline(
 	main_shader: &simple_gpu::Shaders,
 	pipeline_layout: &wgpu::PipelineLayout,
@@ -124,7 +124,7 @@ pub fn make_pipeline(
 
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn make_character_map_buffer(
 	size: (u16, u16),
 	gpu_instance: &simple_gpu::GpuInstance,
@@ -144,7 +144,7 @@ pub fn make_character_map_buffer(
 
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn create_charmap(
 	name: impl Into<String>,
 	size: (u16, u16),
@@ -215,7 +215,7 @@ pub fn create_charmap(
 
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn make_nearest_sampler(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::Sampler {
 	gpu_instance
 		.wgpu_device
@@ -233,7 +233,7 @@ pub fn make_nearest_sampler(gpu_instance: &simple_gpu::GpuInstance) -> wgpu::Sam
 
 
 #[must_use]
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn make_render_data(
 	output_format: wgpu::TextureFormat,
 	gpu_instance: &simple_gpu::GpuInstance,

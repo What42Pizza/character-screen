@@ -87,7 +87,7 @@ pub struct Charmap {
 
 impl Charmap {
 	/// Places a character (or generic value) at a position within the charmap
-	#[inline]
+	#[cfg_attr(feature = "inline", inline)]
 	pub fn place(&mut self, value: u8, pos: (u16, u16), colors: (u8, u8, u8)) {
 		let i = (pos.0 as usize + pos.1 as usize * self.size.0 as usize) * 4;
 		self.buffer[i] = value;
@@ -97,7 +97,7 @@ impl Charmap {
 	}
 	/// Gets the character (or generic value) at a position within the charmap
 	#[must_use]
-	#[inline]
+	#[cfg_attr(feature = "inline", inline)]
 	pub fn get(&self, pos: (u16, u16)) -> (u8, u8, u8, u8) {
 		let i = (pos.0 as usize + pos.1 as usize * self.size.0 as usize) * 4;
 		(
@@ -108,7 +108,7 @@ impl Charmap {
 		)
 	}
 	/// Sends the data in `Self.buffer` to the gpu
-	#[inline]
+	#[cfg_attr(feature = "inline", inline)]
 	pub fn update_gpu(&mut self, gpu_instance: &simple_gpu::GpuInstance) {
 		simple_gpu::sync_buffer(&mut self.buffer, gpu_instance);
 	}
@@ -116,14 +116,14 @@ impl Charmap {
 
 impl Deref for Charmap {
 	type Target = Vec<u8>;
-	#[inline]
+	#[cfg_attr(feature = "inline", inline)]
 	fn deref(&self) -> &Self::Target {
 		&self.buffer
 	}
 }
 
 impl DerefMut for Charmap {
-	#[inline]
+	#[cfg_attr(feature = "inline", inline)]
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.buffer
 	}
@@ -132,7 +132,7 @@ impl DerefMut for Charmap {
 
 
 /// Does the actual rendering
-#[inline]
+#[cfg_attr(feature = "inline", inline)]
 pub fn render(
 	charmaps: &[&Charmap],
 	render_pass: &mut wgpu::RenderPass,
