@@ -149,7 +149,7 @@ pub fn create_charmap(
 	name: impl Into<String>,
 	size: (u16, u16),
 	char_atlas_view: &wgpu::TextureView,
-	color_lut_view: &wgpu::TextureView,
+	colors_lut_view: &wgpu::TextureView,
 	render_data: &CharmapRenderData,
 	gpu_instance: &simple_gpu::GpuInstance,
 ) -> Charmap {
@@ -188,7 +188,7 @@ pub fn create_charmap(
 				},
 				wgpu::BindGroupEntry {
 					binding: 2,
-					resource: wgpu::BindingResource::TextureView(color_lut_view),
+					resource: wgpu::BindingResource::TextureView(colors_lut_view),
 				},
 				wgpu::BindGroupEntry {
 					binding: 3,

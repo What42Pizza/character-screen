@@ -59,17 +59,17 @@ fn main() -> Result<()> {
 	// textures
 	let char_atlas_tex =
 		charmap_renderer::load_character_atlas(assets_path.join("atlas.png"), &gpu_instance)?;
-	let color_lut = simple_gpu::load_texture_from_path(
-		assets_path.join("color_lut.png"),
+	let colors_lut = simple_gpu::load_texture_from_path(
+		assets_path.join("colors_lut.png"),
 		wgpu::FilterMode::Nearest,
 		1,
 		&gpu_instance,
 	)?;
-	debug_assert_eq!(color_lut.settings.size, (16, 16));
+	debug_assert_eq!(colors_lut.settings.size, (16, 16));
 	let char_atlas_tex_view = char_atlas_tex
 		.wgpu_texture
 		.create_view(&wgpu::TextureViewDescriptor::default());
-	let color_lut_tex_view = color_lut
+	let colors_lut_tex_view = colors_lut
 		.wgpu_texture
 		.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -80,7 +80,7 @@ fn main() -> Result<()> {
 		"Main Charmap",
 		(96, 45),
 		&char_atlas_tex_view,
-		&color_lut_tex_view,
+		&colors_lut_tex_view,
 		&render_data,
 		&gpu_instance,
 	);
@@ -98,7 +98,7 @@ fn main() -> Result<()> {
 		&mut charmap,
 	);
 	place_border(15, 61, 15, 18, (0, 1, 0), &mut charmap);
-	simple_gpu::sync_buffer(&mut charmap.buffer, &gpu_instance);
+	charmap.update_gpu(&gpu_instance);
 
 	// assemble program's data
 	let mut data = ProgramData {

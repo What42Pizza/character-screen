@@ -107,6 +107,11 @@ impl Charmap {
 			self.buffer[i + 3],
 		)
 	}
+	/// Sends the data in `Self.buffer` to the gpu
+	#[inline]
+	pub fn update_gpu(&mut self, gpu_instance: &simple_gpu::GpuInstance) {
+		simple_gpu::sync_buffer(&mut self.buffer, gpu_instance);
+	}
 }
 
 impl Deref for Charmap {
