@@ -53,14 +53,14 @@ impl Charmap {
 	/// Updates the character atlas texture and color LUT texture, same as [`update_charmap_textures()`]
 	#[cfg_attr(feature = "inline", inline)]
 	pub fn update_textures(
-		charmap: &mut Self,
+		&mut self,
 		char_atlas_view: &wgpu::TextureView,
 		colors_lut_view: &wgpu::TextureView,
 		render_data: &CharmapRenderData,
 		gpu_instance: &simple_gpu::GpuInstance,
 	) {
 		update_charmap_textures(
-			charmap,
+			self,
 			char_atlas_view,
 			colors_lut_view,
 			render_data,
