@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use crate::{CHAR_HEIGHT, CHAR_WIDTH, Charmap, CharmapRawUniforms, CharmapRenderData};
+use crate::{CHAR_HEIGHT, CHAR_WIDTH, CharmapRenderData};
 
 
 
@@ -139,77 +139,6 @@ pub fn make_character_map_buffer(
 	*character_map_buffer = vec![32; buf_size];
 	simple_gpu::sync_buffer(&mut character_map_buffer, gpu_instance);
 	character_map_buffer
-}
-
-
-
-#[must_use]
-#[cfg_attr(feature = "inline", inline)]
-pub fn create_charmap(
-	name: impl Into<String>,
-	size: (u16, u16),
-	char_atlas_view: &wgpu::TextureView,
-	colors_lut_view: &wgpu::TextureView,
-	render_data: &CharmapRenderData,
-	gpu_instance: &simple_gpu::GpuInstance,
-) -> Charmap {
-	let name = name.into();
-
-	let mut uniforms_buffer = simple_gpu::create_uniforms_buffer(gpu_instance);
-	uniforms_buffer.cpu_copy = CharmapRawUniforms {
-		charmap_size: [u32::from(size.0), u32::from(size.1)],
-	};
-	simple_gpu::sync_uniforms_buffer(&uniforms_buffer, gpu_instance);
-
-	let mut buffer = simple_gpu::create_buffer(
-		&name,
-		u32::from(size.0) * u32::from(size.1) * 4,
-		wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
-		gpu_instance,
-	);
-	*buffer = vec![0; size.0 as usize * size.1 as usize * 4];
-	simple_gpu::sync_buffer(&mut buffer, gpu_instance);
-
-	let bind_group = gpu_instance
-		.wgpu_device
-		.create_bind_group(&wgpu::BindGroupDescriptor {
-			label: Some(&name),
-			layout: &render_data.bind_group_layout,
-			entries: &[
-				wgpu::BindGroupEntry {
-					binding: 0,
-					resource: wgpu::BindingResource::Buffer(
-						uniforms_buffer.wgpu_buffer.as_entire_buffer_binding(),
-					),
-				},
-				wgpu::BindGroupEntry {
-					binding: 1,
-					resource: wgpu::BindingResource::TextureView(char_atlas_view),
-				},
-				wgpu::BindGroupEntry {
-					binding: 2,
-					resource: wgpu::BindingResource::TextureView(colors_lut_view),
-				},
-				wgpu::BindGroupEntry {
-					binding: 3,
-					resource: wgpu::BindingResource::Sampler(&render_data.nearest_sampler),
-				},
-				wgpu::BindGroupEntry {
-					binding: 4,
-					resource: wgpu::BindingResource::Buffer(
-						buffer.wgpu_buffer.as_entire_buffer_binding(),
-					),
-				},
-			],
-		});
-
-	Charmap {
-		name,
-		size,
-		uniforms_buffer,
-		buffer,
-		bind_group,
-	}
 }
 
 
