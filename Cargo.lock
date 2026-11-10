@@ -1190,7 +1190,7 @@ checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 [[package]]
 name = "simple-gpu"
 version = "0.1.0"
-source = "git+https://github.com/What42Pizza/rust-simple-gpu#775190ebe22a27d36897e99a343dd5a9b543f9ee"
+source = "git+https://github.com/What42Pizza/rust-simple-gpu#ed217690a9ce2ff2cbbb1ff61c2bfe1f24e90590"
 dependencies = [
  "anyhow",
  "bytemuck",
