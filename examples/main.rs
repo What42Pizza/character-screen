@@ -97,6 +97,7 @@ fn main() -> Result<()> {
 		(0, 1, 0),
 		&mut charmap,
 	);
+	place_text("click anywhere to change the position of the render", (15, 20), (0, 1,0 ), &mut charmap);
 	place_border(15, 61, 15, 18, (0, 1, 0), &mut charmap);
 	charmap.update_gpu(&gpu_instance);
 
@@ -144,6 +145,9 @@ fn main() -> Result<()> {
 				} => {
 					println!("closing"); // note: this can get both a quit event and a close requested event in the same frame
 					data.should_quit = true;
+				}
+				Event::MouseButtonDown { x, y, .. } => {
+					data.charmap.update_offset((x as u32, y as u32), &gpu_instance);
 				}
 				e => {
 					info!("Unknown event: {e:?}");
@@ -218,17 +222,17 @@ pub fn place_border(
 	charmap: &mut charmap_renderer::Charmap,
 ) {
 	for x in left_edge + 1..=right_edge - 1 {
-		charmap.place(2, (x, top_edge), colors);
-		charmap.place(2, (x, bottom_edge), colors);
+		charmap.place(6, (x, top_edge), colors);
+		charmap.place(6, (x, bottom_edge), colors);
 	}
 	for y in top_edge + 1..=bottom_edge - 1 {
-		charmap.place(3, (left_edge, y), colors);
-		charmap.place(3, (right_edge, y), colors);
+		charmap.place(7, (left_edge, y), colors);
+		charmap.place(7, (right_edge, y), colors);
 	}
-	charmap.place(1, (left_edge, top_edge), colors);
-	charmap.place(1, (right_edge, top_edge), colors);
-	charmap.place(1, (left_edge, bottom_edge), colors);
-	charmap.place(1, (right_edge, bottom_edge), colors);
+	charmap.place(4, (left_edge, top_edge), colors);
+	charmap.place(4, (right_edge, top_edge), colors);
+	charmap.place(5, (left_edge, bottom_edge), colors);
+	charmap.place(5, (right_edge, bottom_edge), colors);
 }
 
 

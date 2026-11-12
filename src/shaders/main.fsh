@@ -7,6 +7,7 @@
 
 layout(set = 0, binding = 0) uniform all_uniforms {
 	uvec2 charmap_size;
+	uvec2 offset;
 };
 layout(set = 0, binding = 1) uniform texture2D char_atlas_tex;
 layout(set = 0, binding = 2) uniform texture2D colors_lut_tex;
@@ -20,7 +21,7 @@ layout(set = 0, binding = 4, std430) readonly buffer CharacterMap {
 layout(location = 0) out vec4 frag_color;
 
 void main() {
-	uvec2 texel_coord = uvec2(gl_FragCoord.xy);
+	uvec2 texel_coord = uvec2(gl_FragCoord.xy) - offset;
 	
 	uvec2 charmap_pos = texel_coord / CHAR_SIZE;
 	if (charmap_pos.x >= charmap_size.x || charmap_pos.y >= charmap_size.y) {

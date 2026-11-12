@@ -3,8 +3,18 @@
 		"bytemuck",
 		"charmap",
 		"charmaps",
+		"clippy",
 		"gles",
+		"glsl",
+		"multisample",
 		"multisampled",
-		"Unorm"
+		"multiview",
+		"texel",
+		"Unorm",
+		"uvec",
+		"Vsync",
+		"webp",
+		"wgpu",
+		"Zeroable"
 	]
 }

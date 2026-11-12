@@ -23,8 +23,10 @@ pub struct Charmap {
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C)]
 pub struct CharmapRawUniforms {
-	/// size of the current charmap
+	/// The size of the current charmap
 	pub charmap_size: [u32; 2],
+	/// Much much to move the rendered result
+	pub offset: [u32; 2],
 }
 
 
@@ -95,6 +97,14 @@ impl Charmap {
 	pub fn update_gpu(&mut self, gpu_instance: &simple_gpu::GpuInstance) {
 		simple_gpu::sync_buffer(&mut self.buffer, gpu_instance);
 	}
+	
+	/// Sets the position where the charmap will be rendered to
+	pub fn update_offset(&mut self, offset: (u32, u32), gpu_instance: &simple_gpu::GpuInstance) {
+		let offset = offset.into();
+		if self.uniforms_buffer.cpu_copy.offset == offset { return; }
+		self.uniforms_buffer.cpu_copy.offset = offset;
+		simple_gpu::sync_uniforms_buffer(&self.uniforms_buffer, gpu_instance);
+	}
 }
 
 
@@ -132,6 +142,7 @@ pub fn create_charmap(
 	let mut uniforms_buffer = simple_gpu::create_uniforms_buffer(gpu_instance);
 	uniforms_buffer.cpu_copy = CharmapRawUniforms {
 		charmap_size: [u32::from(size.0), u32::from(size.1)],
+		offset: [0; 2],
 	};
 	simple_gpu::sync_uniforms_buffer(&uniforms_buffer, gpu_instance);
 
