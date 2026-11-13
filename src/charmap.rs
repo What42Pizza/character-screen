@@ -97,11 +97,13 @@ impl Charmap {
 	pub fn update_gpu(&mut self, gpu_instance: &simple_gpu::GpuInstance) {
 		simple_gpu::sync_buffer(&mut self.buffer, gpu_instance);
 	}
-	
+
 	/// Sets the position where the charmap will be rendered to
 	pub fn update_offset(&mut self, offset: (u32, u32), gpu_instance: &simple_gpu::GpuInstance) {
 		let offset = offset.into();
-		if self.uniforms_buffer.cpu_copy.offset == offset { return; }
+		if self.uniforms_buffer.cpu_copy.offset == offset {
+			return;
+		}
 		self.uniforms_buffer.cpu_copy.offset = offset;
 		simple_gpu::sync_uniforms_buffer(&self.uniforms_buffer, gpu_instance);
 	}

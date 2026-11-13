@@ -97,7 +97,12 @@ fn main() -> Result<()> {
 		(0, 1, 0),
 		&mut charmap,
 	);
-	place_text("click anywhere to change the position of the render", (15, 20), (0, 1,0 ), &mut charmap);
+	place_text(
+		"click anywhere to change the position of the render",
+		(15, 20),
+		(0, 1, 0),
+		&mut charmap,
+	);
 	place_border(15, 61, 15, 18, (0, 1, 0), &mut charmap);
 	charmap.update_gpu(&gpu_instance);
 
@@ -147,7 +152,8 @@ fn main() -> Result<()> {
 					data.should_quit = true;
 				}
 				Event::MouseButtonDown { x, y, .. } => {
-					data.charmap.update_offset((x as u32, y as u32), &gpu_instance);
+					data.charmap
+						.update_offset((x as u32, y as u32), &gpu_instance);
 				}
 				e => {
 					info!("Unknown event: {e:?}");
