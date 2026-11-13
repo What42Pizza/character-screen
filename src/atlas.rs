@@ -37,13 +37,18 @@ pub fn load_character_atlas(
 		.map(OsStr::to_string_lossy)
 		.ok_or_else(|| anyhow!("Failed to get file name from path {}", path.display()))?;
 
-	let mut texture_data = texture_image.into_rgba8();
+	let texture_data_rgba = texture_image.into_rgba8();
+	let mut texture_data = Vec::with_capacity(texture_data_rgba.len() / 2);
+	for i in 0..texture_data_rgba.len() / 4 {
+		texture_data.push(texture_data_rgba.as_raw()[i * 4]);
+		texture_data.push(texture_data_rgba.as_raw()[i * 4 + 1]);
+	}
 	let texture_data = remove_padding(&mut texture_data)?;
 
 	let texture = simple_gpu::create_texture(
 		file_name,
 		(160, 224),
-		wgpu::TextureFormat::Rgba8Unorm,
+		wgpu::TextureFormat::Rg8Unorm,
 		wgpu::FilterMode::Nearest,
 		1,
 		gpu_instance,
@@ -57,14 +62,14 @@ pub fn load_character_atlas(
 
 /// Removes the padding from a character atlas texture
 ///
-/// The input texture must be RGBA8, 175x239 (`CHAR_SIZE * 16 + 15`, one pixel gap between each character texture), and the data is packed into an RGBA8 160x224 texture. This both mutates the given data and returns a slice for the compacted data
+/// The input texture must be RG8, 175x239 (`CHAR_SIZE * 16 + 15`, one pixel gap between each character texture), and the data is packed into an RG8 160x224 texture. This both mutates the given data and returns a slice for the compacted data
 ///
 /// # Errors
 ///
 /// This errors if `data.len()` is not exactly 167300 (which is 175*239*4)
 pub fn remove_padding(data: &mut [u8]) -> Result<&[u8]> {
-	const CHAR_STRIDE: usize = CHAR_WIDTH * 4;
-	const EXPECTED_DATA_LEN: usize = (CHAR_WIDTH * 16 + 15) * (CHAR_HEIGHT * 16 + 15) * 4;
+	const CHAR_STRIDE: usize = CHAR_WIDTH * 2;
+	const EXPECTED_DATA_LEN: usize = (CHAR_WIDTH * 16 + 15) * (CHAR_HEIGHT * 16 + 15) * 2;
 	if data.len() != EXPECTED_DATA_LEN {
 		bail!(
 			"Expected input character texture atlas to be {} bytes (175x239, 10x14 characters with a one pixel gap between each character), but the actual length is {}",
@@ -80,13 +85,13 @@ pub fn remove_padding(data: &mut [u8]) -> Result<&[u8]> {
 			for _in_char_y in 0..CHAR_HEIGHT {
 				for _char_x in 0..16 {
 					dst.copy_from(src, CHAR_STRIDE);
-					src = src.add(CHAR_STRIDE + 4);
+					src = src.add(CHAR_STRIDE + 2);
 					dst = dst.add(CHAR_STRIDE);
 				}
-				src = src.sub(4);
+				src = src.sub(2);
 			}
-			src = src.add(CHAR_STRIDE * 16 + 15 * 4);
+			src = src.add(CHAR_STRIDE * 16 + 15 * 2);
 		}
 	}
-	Ok(&data[..160 * 224 * 4])
+	Ok(&data[..160 * 224 * 2])
 }
