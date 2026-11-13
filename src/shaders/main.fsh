@@ -36,14 +36,13 @@ void main() {
 	vec4 char_tex_color = texture(char_atlas, char_tex_coord / (CHAR_SIZE * 16));
 	
 	vec2 color_1_coord = uvec2((char_data & 0x00000F00) >> 8 , (char_data & 0x0000F000) >> 12) + 0.5;
-	vec3 color_1 = texture(colors_lut, color_1_coord / 16.0).rgb;
+	vec4 color_1 = texture(colors_lut, color_1_coord / 16.0);
 	vec2 color_2_coord = uvec2((char_data & 0x000F0000) >> 16, (char_data & 0x00F00000) >> 20) + 0.5;
-	vec3 color_2 = texture(colors_lut, color_2_coord / 16.0).rgb;
+	vec4 color_2 = texture(colors_lut, color_2_coord / 16.0);
 	vec2 color_3_coord = uvec2((char_data & 0x0F000000) >> 24, (char_data & 0xF0000000) >> 28) + 0.5;
-	vec3 color_3 = texture(colors_lut, color_3_coord / 16.0).rgb;
+	vec4 color_3 = texture(colors_lut, color_3_coord / 16.0);
 	
-	frag_color.rgb = mix(color_1, color_2, char_tex_color.r);
-	frag_color.rgb = mix(frag_color.rgb, color_3, char_tex_color.g);
-	frag_color.a = char_tex_color.a;
+	frag_color = mix(color_1, color_2, char_tex_color.r);
+	frag_color = mix(frag_color, color_3, char_tex_color.g);
 	
 }

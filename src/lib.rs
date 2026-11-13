@@ -17,7 +17,8 @@
 //!
 //! - Each cell in the character map defines a character to render and three colors to render with.
 //! - Colors in the character map cells are indices into a color lut texture
-//! - Each character texture uses the red channel to mix the first two colors, the green channel for mixing the first mix result with the third color, and the alpha channel for opacity
+//! - Each character texture uses the red channel to mix the first two colors, then the green channel for mixing the first mix result with the third color, and that is the final fragment color
+//! - Transparency is achieved using the colors LUT texture
 
 
 
