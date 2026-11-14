@@ -11,7 +11,7 @@ pub struct Charmap {
 	pub name: String,
 	/// The size that this charmap was created as
 	pub size: (u16, u16),
-	/// Holds the size of the charmap
+	/// Holds the size and render offset of the charmap
 	pub uniforms_buffer: simple_gpu::UniformsBuffer<CharmapRawUniforms>,
 	/// Holds both the cpu copy and (a handle for) the gpu copy of the charmap data
 	pub buffer: simple_gpu::GpuBuffer<u8>,

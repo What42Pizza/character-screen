@@ -108,7 +108,7 @@ pub fn make_pipeline(
 				entry_point: None,
 				targets: &[Some(wgpu::ColorTargetState {
 					format: target_format,
-					blend: Some(wgpu::BlendState::REPLACE),
+					blend: Some(wgpu::BlendState::ALPHA_BLENDING),
 					write_mask: wgpu::ColorWrites::ALL,
 				})],
 				compilation_options: wgpu::PipelineCompilationOptions::default(),
